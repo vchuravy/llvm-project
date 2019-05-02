@@ -830,11 +830,13 @@ bool Vectorizer::vectorizeStoreChain(
   Chain = NewChain;
   ChainSize = Chain.size();
 
-  // Check if it's legal to vectorize this chain. If not, split the chain and
-  // try again.
+  // Check if it's legal to vectorize this chain, and whether it's aligned.
+  // If not, split the chain and try again.
   unsigned EltSzInBytes = Sz / 8;
   unsigned SzInBytes = EltSzInBytes * ChainSize;
-  if (!TTI.isLegalToVectorizeStoreChain(SzInBytes, Alignment, AS)) {
+  if (!TTI.isLegalToVectorizeStoreChain(SzInBytes, Alignment, AS) ||
+      (S0->getPointerAddressSpace() != 0 &&
+       accessIsMisaligned(SzInBytes, AS, Alignment))) {
     auto Chains = splitOddVectorElts(Chain, Sz);
     return vectorizeStoreChain(Chains.first, InstructionsProcessed) |
            vectorizeStoreChain(Chains.second, InstructionsProcessed);
@@ -978,11 +980,13 @@ bool Vectorizer::vectorizeLoadChain(
   Chain = NewChain;
   ChainSize = Chain.size();
 
-  // Check if it's legal to vectorize this chain. If not, split the chain and
-  // try again.
+  // Check if it's legal to vectorize this chain, and whether it's aligned.
+  // If not, split the chain and try again.
   unsigned EltSzInBytes = Sz / 8;
   unsigned SzInBytes = EltSzInBytes * ChainSize;
-  if (!TTI.isLegalToVectorizeLoadChain(SzInBytes, Alignment, AS)) {
+  if (!TTI.isLegalToVectorizeLoadChain(SzInBytes, Alignment, AS) ||
+      (L0->getPointerAddressSpace() != 0 &&
+       accessIsMisaligned(SzInBytes, AS, Alignment))) {
     auto Chains = splitOddVectorElts(Chain, Sz);
     return vectorizeLoadChain(Chains.first, InstructionsProcessed) |
            vectorizeLoadChain(Chains.second, InstructionsProcessed);
