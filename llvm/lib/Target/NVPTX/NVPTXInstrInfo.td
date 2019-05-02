@@ -2309,7 +2309,7 @@ multiclass LD<NVPTXRegClass regclass> {
     "\t$dst, [$addr+$offset];", []>;
 }
 
-let mayLoad=1, hasSideEffects=0 in {
+let IsLoad=1, mayLoad=1, hasSideEffects=0 in {
   defm LD_i8  : LD<Int16Regs>;
   defm LD_i16 : LD<Int16Regs>;
   defm LD_i32 : LD<Int32Regs>;
@@ -2359,7 +2359,7 @@ multiclass ST<NVPTXRegClass regclass> {
     " \t[$addr+$offset], $src;", []>;
 }
 
-let mayStore=1, hasSideEffects=0 in {
+let IsStore=1, mayStore=1, hasSideEffects=0 in {
   defm ST_i8  : ST<Int16Regs>;
   defm ST_i16 : ST<Int16Regs>;
   defm ST_i32 : ST<Int32Regs>;
@@ -2447,7 +2447,7 @@ multiclass LD_VEC<NVPTXRegClass regclass> {
     "ld${isVol:volatile}${addsp:addsp}${Vec:vec}.${Sign:sign}$fromWidth "
     "\t{{$dst1, $dst2, $dst3, $dst4}}, [$addr+$offset];", []>;
 }
-let mayLoad=1, hasSideEffects=0 in {
+let IsLoad=1, mayLoad=1, hasSideEffects=0 in {
   defm LDV_i8  : LD_VEC<Int16Regs>;
   defm LDV_i16 : LD_VEC<Int16Regs>;
   defm LDV_i32 : LD_VEC<Int32Regs>;
@@ -2542,7 +2542,7 @@ multiclass ST_VEC<NVPTXRegClass regclass> {
     "$fromWidth \t[$addr+$offset], {{$src1, $src2, $src3, $src4}};", []>;
 }
 
-let mayStore=1, hasSideEffects=0 in {
+let IsStore=1, mayStore=1, hasSideEffects=0 in {
   defm STV_i8  : ST_VEC<Int16Regs>;
   defm STV_i16 : ST_VEC<Int16Regs>;
   defm STV_i32 : ST_VEC<Int32Regs>;

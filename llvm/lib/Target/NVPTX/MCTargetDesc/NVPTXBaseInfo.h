@@ -33,6 +33,8 @@ enum AddressSpace {
 namespace NVPTXII {
 enum {
   // These must be kept in sync with TSFlags in NVPTXInstrFormats.td
+  IsLoadFlag = 0x20,
+  IsStoreFlag = 0x40,
   IsTexFlag = 0x80,
   IsSuldMask = 0x300,
   IsSuldShift = 8,

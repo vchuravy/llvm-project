@@ -23,12 +23,22 @@
 using namespace llvm;
 
 #define GET_INSTRINFO_CTOR_DTOR
+#define GET_INSTRINFO_NAMED_OPS
 #include "NVPTXGenInstrInfo.inc"
 
 // Pin the vtable to this file.
 void NVPTXInstrInfo::anchor() {}
 
 NVPTXInstrInfo::NVPTXInstrInfo() : NVPTXGenInstrInfo(), RegInfo() {}
+
+MachineOperand *NVPTXInstrInfo::getNamedOperand(MachineInstr &MI,
+                                             unsigned OperandName) const {
+  int Idx = NVPTX::getNamedOperandIdx(MI.getOpcode(), OperandName);
+  if (Idx == -1)
+    return nullptr;
+
+  return &MI.getOperand(Idx);
+}
 
 void NVPTXInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator I,
@@ -250,4 +260,49 @@ unsigned NVPTXInstrInfo::insertBranch(MachineBasicBlock &MBB,
   BuildMI(&MBB, DL, get(NVPTX::CBranch)).addReg(Cond[0].getReg()).addMBB(TBB);
   BuildMI(&MBB, DL, get(NVPTX::GOTO)).addMBB(FBB);
   return 2;
+}
+
+bool NVPTXInstrInfo::getMemOpBaseRegImmOfs(MachineInstr &LdSt, unsigned &BaseReg,
+                                           int64_t &OffsetValue,
+                                           const TargetRegisterInfo *TRI) const {\
+  const MCInstrDesc &MCID = LdSt.getDesc();
+  // TODO: identify vector loads
+  if (MCID.TSFlags & NVPTXII::IsLoadFlag) {
+    const MachineOperand *Offset = getNamedOperand(LdSt, NVPTX::OpName::offset);
+    const MachineOperand *Base = getNamedOperand(LdSt, NVPTX::OpName::addr);
+    // FIXME: this is a WIP, need to match up with the tablegen defs
+
+    if (Offset) {
+      OffsetValue = Offset->getImm();
+    } else {
+      OffsetValue = 0; // XXX: is this correct? eg. LDV_f32_v4_avar, no offset
+      // TODO: make sure all offset args are actually named offset.
+      // TODO: check for special instrs (eg. amdgpu has instr with two offsets)
+    }
+
+    assert(Base && "Cannot handle load without address argument");
+    if (Base->isReg()) {
+      BaseReg = Base->getReg();
+    }
+    else if (Base->isGlobal()) {
+      // HACK: NVPTX demotes global variables to shared memory during ISel...
+      //        let's try with a pseudo register, this is only used to unique.
+      BaseReg = (unsigned)(uintptr_t)Base->getGlobal();
+    } else {
+      // FIXME: other cases, eg. load from param mem
+      return false;
+    }
+    return true;
+  }
+  else if (MCID.TSFlags & NVPTXII::IsStoreFlag) {
+    // TODO
+  }
+  return false;
+}
+
+bool NVPTXInstrInfo::shouldClusterMemOps(MachineInstr &FirstLdSt, unsigned BaseReg1,
+                                         MachineInstr &SecondLdSt, unsigned BaseReg2,
+                                         unsigned NumLoads) const {
+  // nvcc is crazy aggressive
+  return true;
 }

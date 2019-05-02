@@ -19,6 +19,7 @@
 #include "llvm/CodeGen/TargetInstrInfo.h"
 
 #define GET_INSTRINFO_HEADER
+#define GET_INSTRINFO_OPERAND_ENUM
 #include "NVPTXGenInstrInfo.inc"
 
 namespace llvm {
@@ -30,6 +31,17 @@ public:
   explicit NVPTXInstrInfo();
 
   const NVPTXRegisterInfo &getRegisterInfo() const { return RegInfo; }
+
+  /// Returns the operand named \p Op.  If \p MI does not have an
+  /// operand named \c Op, this function returns nullptr.
+  LLVM_READONLY
+  MachineOperand *getNamedOperand(MachineInstr &MI, unsigned OperandName) const;
+
+  LLVM_READONLY
+  const MachineOperand *getNamedOperand(const MachineInstr &MI,
+                                        unsigned OpName) const {
+    return getNamedOperand(const_cast<MachineInstr &>(MI), OpName);
+  }
 
   /* The following virtual functions are used in register allocation.
    * They are not implemented because the existing interface and the logic
@@ -72,6 +84,13 @@ public:
     return MI.getOperand(2).getImm();
   }
 
+  // memop clustering
+  bool getMemOpBaseRegImmOfs(MachineInstr &LdSt, unsigned &BaseReg,
+                             int64_t &Offset,
+                             const TargetRegisterInfo *TRI) const final;
+  bool shouldClusterMemOps(MachineInstr &FirstLdSt, unsigned BaseReg1,
+                           MachineInstr &SecondLdSt, unsigned BaseReg2,
+                           unsigned NumLoads) const override;
 };
 
 } // namespace llvm

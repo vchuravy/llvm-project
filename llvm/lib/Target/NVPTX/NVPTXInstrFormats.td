@@ -29,6 +29,7 @@ class NVPTXInst<dag outs, dag ins, string asmstr, list<dag> pattern>
   dag InOperandList = ins;
   let AsmString = asmstr;
   let Pattern = pattern;
+  let UseNamedOperandTable = 1;
 
   // TSFlagFields
   bits<4> VecInstType = VecNOP.Value;

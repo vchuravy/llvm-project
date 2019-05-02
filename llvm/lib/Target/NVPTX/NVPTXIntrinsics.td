@@ -1731,6 +1731,7 @@ multiclass LDU_G<string TyStr, NVPTXRegClass regclass> {
                         []>, Requires<[hasLDU]>;
 }
 
+let IsLoad = 1 in {
 defm INT_PTX_LDU_GLOBAL_i8  : LDU_G<"u8 \t$result, [$src];", Int16Regs>;
 defm INT_PTX_LDU_GLOBAL_i16 : LDU_G<"u16 \t$result, [$src];", Int16Regs>;
 defm INT_PTX_LDU_GLOBAL_i32 : LDU_G<"u32 \t$result, [$src];", Int32Regs>;
@@ -1741,6 +1742,7 @@ defm INT_PTX_LDU_GLOBAL_f32 : LDU_G<"f32 \t$result, [$src];", Float32Regs>;
 defm INT_PTX_LDU_GLOBAL_f64 : LDU_G<"f64 \t$result, [$src];", Float64Regs>;
 defm INT_PTX_LDU_GLOBAL_p32 : LDU_G<"u32 \t$result, [$src];", Int32Regs>;
 defm INT_PTX_LDU_GLOBAL_p64 : LDU_G<"u64 \t$result, [$src];", Int64Regs>;
+}
 
 // vector
 
@@ -1781,6 +1783,7 @@ multiclass VLDU_G_ELE_V4<string TyStr, NVPTXRegClass regclass> {
                !strconcat("ldu.global.", TyStr), []>;
 }
 
+let IsLoad = 1 in {
 defm INT_PTX_LDU_G_v2i8_ELE
   : VLDU_G_ELE_V2<"v2.u8 \t{{$dst1, $dst2}}, [$src];",  Int16Regs>;
 defm INT_PTX_LDU_G_v2i16_ELE
@@ -1814,6 +1817,7 @@ defm INT_PTX_LDU_G_v4f16x2_ELE
 defm INT_PTX_LDU_G_v4f32_ELE
   : VLDU_G_ELE_V4<"v4.f32 \t{{$dst1, $dst2, $dst3, $dst4}}, [$src];",
     Float32Regs>;
+}
 
 
 //-----------------------------------
@@ -1842,6 +1846,7 @@ multiclass LDG_G<string TyStr, NVPTXRegClass regclass> {
                         []>, Requires<[hasLDG]>;
 }
 
+let IsLoad = 1 in {
 defm INT_PTX_LDG_GLOBAL_i8
   : LDG_G<"u8 \t$result, [$src];", Int16Regs>;
 defm INT_PTX_LDG_GLOBAL_i16
@@ -1862,6 +1867,7 @@ defm INT_PTX_LDG_GLOBAL_p32
   : LDG_G<"u32 \t$result, [$src];", Int32Regs>;
 defm INT_PTX_LDG_GLOBAL_p64
   : LDG_G<"u64 \t$result, [$src];", Int64Regs>;
+}
 
 // vector
 
@@ -1903,6 +1909,7 @@ multiclass VLDG_G_ELE_V4<string TyStr, NVPTXRegClass regclass> {
 }
 
 // FIXME: 8-bit LDG should be fixed once LDG/LDU nodes are made into proper loads.
+let IsLoad = 1 in {
 defm INT_PTX_LDG_G_v2i8_ELE
   : VLDG_G_ELE_V2<"v2.u8 \t{{$dst1, $dst2}}, [$src];",  Int16Regs>;
 defm INT_PTX_LDG_G_v2i16_ELE
@@ -1931,7 +1938,7 @@ defm INT_PTX_LDG_G_v4f16x2_ELE
   : VLDG_G_ELE_V4<"v4.b32 \t{{$dst1, $dst2, $dst3, $dst4}}, [$src];", Float16x2Regs>;
 defm INT_PTX_LDG_G_v4f32_ELE
   : VLDG_G_ELE_V4<"v4.f32 \t{{$dst1, $dst2, $dst3, $dst4}}, [$src];", Float32Regs>;
-
+}
 
 multiclass NG_TO_G<string Str, Intrinsic Intrin> {
    def _yes : NVPTXInst<(outs Int32Regs:$result), (ins Int32Regs:$src),
