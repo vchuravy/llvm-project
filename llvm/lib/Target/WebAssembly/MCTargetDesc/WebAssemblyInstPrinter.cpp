@@ -305,6 +305,8 @@ const char *WebAssembly::anyTypeToString(unsigned Ty) {
     return "v128";
   case wasm::WASM_TYPE_FUNCREF:
     return "funcref";
+  case wasm::WASM_TYPE_ANYREF:
+    return "anyref";
   case wasm::WASM_TYPE_FUNC:
     return "func";
   case wasm::WASM_TYPE_EXNREF:

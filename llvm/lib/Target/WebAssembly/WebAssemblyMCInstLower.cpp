@@ -64,6 +64,11 @@ WebAssemblyMCInstLower::GetGlobalAddressSymbol(const MachineOperand &MO) const {
     WasmSym->setType(wasm::WASM_SYMBOL_TYPE_FUNCTION);
   }
 
+  unsigned TargetFlags = MO.getTargetFlags();
+  if (TargetFlags == WebAssemblyII::MO_TABLE_INDEX) {
+    WasmSym->setType(wasm::WASM_SYMBOL_TYPE_TABLE);
+  }
+
   return WasmSym;
 }
 
@@ -87,6 +92,12 @@ MCSymbol *WebAssemblyMCInstLower::GetExternalSymbolSymbol(
         uint8_t(Subtarget.hasAddr64() ? wasm::WASM_TYPE_I64
                                       : wasm::WASM_TYPE_I32),
         Mutable});
+    return WasmSym;
+  }
+
+  unsigned TargetFlags = MO.getTargetFlags();
+  if (TargetFlags == WebAssemblyII::MO_TABLE_INDEX) {
+    WasmSym->setType(wasm::WASM_SYMBOL_TYPE_TABLE);
     return WasmSym;
   }
 
@@ -129,6 +140,9 @@ MCOperand WebAssemblyMCInstLower::lowerSymbolOperand(const MachineOperand &MO,
 
   switch (TargetFlags) {
     case WebAssemblyII::MO_NO_FLAG:
+      break;
+    case WebAssemblyII::MO_TABLE_INDEX:
+      Kind = MCSymbolRefExpr::VK_WASM_TABLEINDEX;
       break;
     case WebAssemblyII::MO_GOT:
       Kind = MCSymbolRefExpr::VK_GOT;

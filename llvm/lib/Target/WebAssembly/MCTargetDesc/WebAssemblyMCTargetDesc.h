@@ -48,6 +48,8 @@ enum OperandType {
   OPERAND_LOCAL,
   /// Global index.
   OPERAND_GLOBAL,
+  /// Global index.
+  OPERAND_TABLE,
   /// 32-bit integer immediates.
   OPERAND_I32IMM,
   /// 64-bit integer immediates.
@@ -102,6 +104,9 @@ enum TOF {
   // address relative the __table_base wasm global.
   // Only applicable to function symbols.
   MO_TABLE_BASE_REL,
+
+  // On a symbol operand this indicates that this operand is a table index.
+  MO_TABLE_INDEX,
 };
 
 } // end namespace WebAssemblyII
@@ -132,6 +137,7 @@ enum class BlockType : unsigned {
   F64 = unsigned(wasm::ValType::F64),
   V128 = unsigned(wasm::ValType::V128),
   Exnref = unsigned(wasm::ValType::EXNREF),
+  Anyref = unsigned(wasm::ValType::ANYREF),
   // Multivalue blocks (and other non-void blocks) are only emitted when the
   // blocks will never be exited and are at the ends of functions (see
   // WebAssemblyCFGStackify::fixEndsAtEndOfFunction). They also are never made
@@ -393,6 +399,8 @@ inline bool isArgument(unsigned Opc) {
   case WebAssembly::ARGUMENT_v2f64_S:
   case WebAssembly::ARGUMENT_exnref:
   case WebAssembly::ARGUMENT_exnref_S:
+  case WebAssembly::ARGUMENT_anyref:
+  case WebAssembly::ARGUMENT_anyref_S:
     return true;
   default:
     return false;
@@ -413,6 +421,8 @@ inline bool isCopy(unsigned Opc) {
   case WebAssembly::COPY_V128_S:
   case WebAssembly::COPY_EXNREF:
   case WebAssembly::COPY_EXNREF_S:
+  case WebAssembly::COPY_ANYREF:
+  case WebAssembly::COPY_ANYREF_S:
     return true;
   default:
     return false;
@@ -433,6 +443,8 @@ inline bool isTee(unsigned Opc) {
   case WebAssembly::TEE_V128_S:
   case WebAssembly::TEE_EXNREF:
   case WebAssembly::TEE_EXNREF_S:
+  case WebAssembly::TEE_ANYREF:
+  case WebAssembly::TEE_ANYREF_S:
     return true;
   default:
     return false;
@@ -465,6 +477,8 @@ inline bool isCallDirect(unsigned Opc) {
   case WebAssembly::CALL_v2f64_S:
   case WebAssembly::CALL_exnref:
   case WebAssembly::CALL_exnref_S:
+  case WebAssembly::CALL_anyref:
+  case WebAssembly::CALL_anyref_S:
   case WebAssembly::RET_CALL:
   case WebAssembly::RET_CALL_S:
     return true;
@@ -499,6 +513,8 @@ inline bool isCallIndirect(unsigned Opc) {
   case WebAssembly::CALL_INDIRECT_v2f64_S:
   case WebAssembly::CALL_INDIRECT_exnref:
   case WebAssembly::CALL_INDIRECT_exnref_S:
+  case WebAssembly::CALL_INDIRECT_anyref:
+  case WebAssembly::CALL_INDIRECT_anyref_S:
   case WebAssembly::RET_CALL_INDIRECT:
   case WebAssembly::RET_CALL_INDIRECT_S:
     return true;
@@ -542,6 +558,8 @@ inline unsigned getCalleeOpNo(unsigned Opc) {
   case WebAssembly::CALL_v2f64_S:
   case WebAssembly::CALL_exnref:
   case WebAssembly::CALL_exnref_S:
+  case WebAssembly::CALL_anyref:
+  case WebAssembly::CALL_anyref_S:
   case WebAssembly::CALL_INDIRECT_i32:
   case WebAssembly::CALL_INDIRECT_i32_S:
   case WebAssembly::CALL_INDIRECT_i64:
@@ -562,6 +580,8 @@ inline unsigned getCalleeOpNo(unsigned Opc) {
   case WebAssembly::CALL_INDIRECT_v4f32_S:
   case WebAssembly::CALL_INDIRECT_v2f64:
   case WebAssembly::CALL_INDIRECT_v2f64_S:
+  case WebAssembly::CALL_INDIRECT_anyref:
+  case WebAssembly::CALL_INDIRECT_anyref_S:
   case WebAssembly::CALL_INDIRECT_exnref:
   case WebAssembly::CALL_INDIRECT_exnref_S:
     return 1;

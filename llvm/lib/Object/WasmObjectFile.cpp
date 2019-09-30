@@ -470,9 +470,11 @@ Error WasmObjectFile::parseLinkingSectionSymtab(ReadContext &Ctx) {
   std::vector<wasm::WasmImport *> ImportedGlobals;
   std::vector<wasm::WasmImport *> ImportedFunctions;
   std::vector<wasm::WasmImport *> ImportedEvents;
+  std::vector<wasm::WasmImport *> ImportedTables;
   ImportedGlobals.reserve(Imports.size());
   ImportedFunctions.reserve(Imports.size());
   ImportedEvents.reserve(Imports.size());
+  ImportedTables.reserve(Imports.size());
   for (auto &I : Imports) {
     if (I.Kind == wasm::WASM_EXTERNAL_FUNCTION)
       ImportedFunctions.emplace_back(&I);
@@ -480,6 +482,8 @@ Error WasmObjectFile::parseLinkingSectionSymtab(ReadContext &Ctx) {
       ImportedGlobals.emplace_back(&I);
     else if (I.Kind == wasm::WASM_EXTERNAL_EVENT)
       ImportedEvents.emplace_back(&I);
+    else if (I.Kind == wasm::WASM_EXTERNAL_TABLE)
+      ImportedTables.emplace_back(&I);
   }
 
   while (Count--) {
@@ -603,6 +607,27 @@ Error WasmObjectFile::parseLinkingSectionSymtab(ReadContext &Ctx) {
           Info.Name = Import.Field;
         EventType = &Import.Event;
         Signature = &Signatures[EventType->SigIndex];
+        Info.ImportName = Import.Field;
+        Info.ImportModule = Import.Module;
+      }
+      break;
+    }
+
+    case wasm::WASM_SYMBOL_TYPE_TABLE: {
+      Info.ElementIndex = readVaruint32(Ctx);
+      if (!isValidTableIndex(Info.ElementIndex) ||
+          IsDefined != isDefinedTableIndex(Info.ElementIndex))
+        return make_error<GenericBinaryError>("invalid table symbol index",
+                                              object_error::parse_failed);
+      if (IsDefined) {
+        Info.Name = readString(Ctx);
+        unsigned TableIndex = Info.ElementIndex - NumImportedTables;
+      } else {
+        wasm::WasmImport &Import = *ImportedTables[Info.ElementIndex];
+        if ((Info.Flags & wasm::WASM_SYMBOL_EXPLICIT_NAME) != 0)
+          Info.Name = readString(Ctx);
+        else
+          Info.Name = Import.Field;
         Info.ImportName = Import.Field;
         Info.ImportModule = Import.Module;
       }
@@ -793,6 +818,11 @@ Error WasmObjectFile::parseRelocSection(StringRef Name, ReadContext &Ctx) {
         return make_error<GenericBinaryError>("Bad relocation event index",
                                               object_error::parse_failed);
       break;
+    case wasm::R_WASM_TABLE_INDEX_LEB:
+      if (!isValidTableSymbol(Reloc.Index))
+        return make_error<GenericBinaryError>("Bad relocation event index",
+                                              object_error::parse_failed);
+      break;
     case wasm::R_WASM_MEMORY_ADDR_LEB:
     case wasm::R_WASM_MEMORY_ADDR_SLEB:
     case wasm::R_WASM_MEMORY_ADDR_I32:
@@ -915,8 +945,10 @@ Error WasmObjectFile::parseImportSection(ReadContext &Ctx) {
       Im.Memory = readLimits(Ctx);
       break;
     case wasm::WASM_EXTERNAL_TABLE:
+      NumImportedTables++;
       Im.Table = readTable(Ctx);
-      if (Im.Table.ElemType != wasm::WASM_TYPE_FUNCREF)
+      if (Im.Table.ElemType != wasm::WASM_TYPE_FUNCREF &&
+          Im.Table.ElemType != wasm::WASM_TYPE_ANYREF)
         return make_error<GenericBinaryError>("Invalid table element type",
                                               object_error::parse_failed);
       break;
@@ -959,7 +991,9 @@ Error WasmObjectFile::parseTableSection(ReadContext &Ctx) {
   Tables.reserve(Count);
   while (Count--) {
     Tables.push_back(readTable(Ctx));
-    if (Tables.back().ElemType != wasm::WASM_TYPE_FUNCREF) {
+    if (Tables.back().ElemType != wasm::WASM_TYPE_FUNCREF &&
+        // TODO: Only allow anyref here when reference-types is enabled?
+        Tables.back().ElemType != wasm::WASM_TYPE_ANYREF) {
       return make_error<GenericBinaryError>("Invalid table element type",
                                             object_error::parse_failed);
     }
@@ -1082,6 +1116,14 @@ bool WasmObjectFile::isDefinedEventIndex(uint32_t Index) const {
   return Index >= NumImportedEvents && isValidEventIndex(Index);
 }
 
+bool WasmObjectFile::isValidTableIndex(uint32_t Index) const {
+  return Index < NumImportedTables + Tables.size();
+}
+
+bool WasmObjectFile::isDefinedTableIndex(uint32_t Index) const {
+  return Index >= NumImportedTables && isValidTableIndex(Index);
+}
+
 bool WasmObjectFile::isValidFunctionSymbol(uint32_t Index) const {
   return Index < Symbols.size() && Symbols[Index].isTypeFunction();
 }
@@ -1092,6 +1134,10 @@ bool WasmObjectFile::isValidGlobalSymbol(uint32_t Index) const {
 
 bool WasmObjectFile::isValidEventSymbol(uint32_t Index) const {
   return Index < Symbols.size() && Symbols[Index].isTypeEvent();
+}
+
+bool WasmObjectFile::isValidTableSymbol(uint32_t Index) const {
+  return Index < Symbols.size() && Symbols[Index].isTypeTable();
 }
 
 bool WasmObjectFile::isValidDataSymbol(uint32_t Index) const {

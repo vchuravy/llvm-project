@@ -51,6 +51,16 @@ private:
   /// right decision when generating code for different targets.
   const WebAssemblySubtarget *Subtarget;
 
+  MVT getPointerTy(const DataLayout &DL, uint32_t AS = 0) const override {
+    return AS == 1 ? MVT::anyref :
+      MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
+  }
+
+  MVT getPointerMemTy(const DataLayout &DL, uint32_t AS = 0) const override {
+    return AS == 1 ? MVT::anyref :
+      MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
+  }
+
   AtomicExpansionKind shouldExpandAtomicRMWInIR(AtomicRMWInst *) const override;
   FastISel *createFastISel(FunctionLoweringInfo &FuncInfo,
                            const TargetLibraryInfo *LibInfo) const override;

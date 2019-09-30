@@ -60,6 +60,7 @@ defm "" : CALL<i64, I64, "i64.">;
 defm "" : CALL<f32, F32, "f32.">;
 defm "" : CALL<f64, F64, "f64.">;
 defm "" : CALL<exnref, EXNREF, "exnref.", [HasExceptionHandling]>;
+defm "" : CALL<anyref, ANYREF, "anyref.", [HasReferenceTypes]>;
 defm "" : CALL<v16i8, V128, "v128.", [HasSIMD128]>;
 defm "" : CALL<v8i16, V128, "v128.", [HasSIMD128]>;
 defm "" : CALL<v4i32, V128, "v128.", [HasSIMD128]>;
@@ -171,6 +172,9 @@ def : Pat<(v2f64 (WebAssemblycall1 (WebAssemblywrapper texternalsym:$callee))),
 def : Pat<(exnref (WebAssemblycall1 (WebAssemblywrapper texternalsym:$callee))),
           (CALL_exnref texternalsym:$callee)>,
       Requires<[HasExceptionHandling]>;
+def : Pat<(anyref (WebAssemblycall1 (WebAssemblywrapper texternalsym:$callee))),
+          (CALL_anyref texternalsym:$callee)>,
+      Requires<[HasReferenceTypes]>;
 def : Pat<(WebAssemblycall0 (WebAssemblywrapper texternalsym:$callee)),
           (CALL_VOID texternalsym:$callee)>;
 def : Pat<(WebAssemblyretcall (WebAssemblywrapper texternalsym:$callee)),

@@ -30,6 +30,10 @@ std::string toString(ValType type) {
     return "f64";
   case ValType::V128:
     return "v128";
+  case ValType::FUNCREF:
+    return "func";
+  case ValType::ANYREF:
+    return "anyref"
   case ValType::EXNREF:
     return "exnref";
   }

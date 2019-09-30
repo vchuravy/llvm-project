@@ -73,6 +73,8 @@ unsigned WebAssemblyWasmObjectWriter::getRelocType(const MCValue &Target,
   switch (Modifier) {
     case MCSymbolRefExpr::VK_GOT:
       return wasm::R_WASM_GLOBAL_INDEX_LEB;
+    case MCSymbolRefExpr::VK_WASM_TABLEINDEX:
+      return wasm::R_WASM_TABLE_INDEX_LEB;
     case MCSymbolRefExpr::VK_WASM_TBREL:
       assert(SymA.isFunction());
       return wasm::R_WASM_TABLE_INDEX_REL_SLEB;
@@ -99,6 +101,8 @@ unsigned WebAssemblyWasmObjectWriter::getRelocType(const MCValue &Target,
       return wasm::R_WASM_FUNCTION_INDEX_LEB;
     if (SymA.isEvent())
       return wasm::R_WASM_EVENT_INDEX_LEB;
+    if (SymA.isTable())
+      return wasm::R_WASM_TABLE_INDEX_LEB;
     return wasm::R_WASM_MEMORY_ADDR_LEB;
   case FK_Data_4:
     if (SymA.isFunction())

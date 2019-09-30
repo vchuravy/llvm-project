@@ -63,6 +63,8 @@ public:
 
   bool isTypeEvent() const { return Info.Kind == wasm::WASM_SYMBOL_TYPE_EVENT; }
 
+  bool isTypeTable() const { return Info.Kind == wasm::WASM_SYMBOL_TYPE_TABLE; }
+
   bool isDefined() const { return !isUndefined(); }
 
   bool isUndefined() const {
@@ -217,9 +219,12 @@ private:
   bool isDefinedGlobalIndex(uint32_t Index) const;
   bool isValidEventIndex(uint32_t Index) const;
   bool isDefinedEventIndex(uint32_t Index) const;
+  bool isValidTableIndex(uint32_t Index) const;
+  bool isDefinedTableIndex(uint32_t Index) const;
   bool isValidFunctionSymbol(uint32_t Index) const;
   bool isValidGlobalSymbol(uint32_t Index) const;
   bool isValidEventSymbol(uint32_t Index) const;
+  bool isValidTableSymbol(uint32_t Index) const;
   bool isValidDataSymbol(uint32_t Index) const;
   bool isValidSectionSymbol(uint32_t Index) const;
   wasm::WasmFunction &getDefinedFunction(uint32_t Index);
@@ -284,6 +289,7 @@ private:
   uint32_t NumImportedGlobals = 0;
   uint32_t NumImportedFunctions = 0;
   uint32_t NumImportedEvents = 0;
+  uint32_t NumImportedTables = 0;
   uint32_t CodeSection = 0;
   uint32_t DataSection = 0;
   uint32_t GlobalSection = 0;

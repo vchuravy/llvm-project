@@ -65,6 +65,10 @@ WebAssemblyTargetLowering::WebAssemblyTargetLowering(
     addRegisterClass(MVT::v2i64, &WebAssembly::V128RegClass);
     addRegisterClass(MVT::v2f64, &WebAssembly::V128RegClass);
   }
+  if (Subtarget->hasReferenceTypes()) {
+    addRegisterClass(MVT::anyref, &WebAssembly::ANYREFRegClass);
+    setOperationAction(ISD::GlobalAddress, MVT::anyref, Custom);
+  }
   // Compute derived properties from the register classes.
   computeRegisterProperties(Subtarget->getRegisterInfo());
 
@@ -1103,8 +1107,8 @@ SDValue WebAssemblyTargetLowering::LowerGlobalAddress(SDValue Op,
   EVT VT = Op.getValueType();
   assert(GA->getTargetFlags() == 0 &&
          "Unexpected target flags on generic GlobalAddressSDNode");
-  if (GA->getAddressSpace() != 0)
-    fail(DL, DAG, "WebAssembly only expects the 0 address space");
+  if (GA->getAddressSpace() != 0 && GA->getAddressSpace() != 1)
+    fail(DL, DAG, "WebAssembly only expects the 0 or 1 address space");
 
   unsigned OperandFlags = 0;
   if (isPositionIndependent()) {
@@ -1134,6 +1138,10 @@ SDValue WebAssemblyTargetLowering::LowerGlobalAddress(SDValue Op,
     } else {
       OperandFlags = WebAssemblyII::MO_GOT;
     }
+  }
+
+  if (GA->getAddressSpace() == 1) {
+    OperandFlags = WebAssemblyII::MO_TABLE_INDEX;
   }
 
   return DAG.getNode(WebAssemblyISD::Wrapper, DL, VT,

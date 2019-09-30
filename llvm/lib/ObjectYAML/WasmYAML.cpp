@@ -493,6 +493,8 @@ void MappingTraits<WasmYAML::SymbolInfo>::mapping(IO &IO,
     IO.mapRequired("Global", Info.ElementIndex);
   } else if (Info.Kind == wasm::WASM_SYMBOL_TYPE_EVENT) {
     IO.mapRequired("Event", Info.ElementIndex);
+  } else if (Info.Kind == wasm::WASM_SYMBOL_TYPE_TABLE) {
+    IO.mapRequired("Table", Info.ElementIndex);
   } else if (Info.Kind == wasm::WASM_SYMBOL_TYPE_DATA) {
     if ((Info.Flags & wasm::WASM_SYMBOL_UNDEFINED) == 0) {
       IO.mapRequired("Segment", Info.DataRef.Segment);
@@ -547,6 +549,7 @@ void ScalarEnumerationTraits<WasmYAML::SymbolKind>::enumeration(
   ECase(GLOBAL);
   ECase(SECTION);
   ECase(EVENT);
+  ECase(TABLE);
 #undef ECase
 }
 
@@ -559,6 +562,7 @@ void ScalarEnumerationTraits<WasmYAML::ValueType>::enumeration(
   ECase(F64);
   ECase(V128);
   ECase(FUNCREF);
+  ECase(ANYREF);
   ECase(FUNC);
 #undef ECase
 }
@@ -590,6 +594,7 @@ void ScalarEnumerationTraits<WasmYAML::TableType>::enumeration(
     IO &IO, WasmYAML::TableType &Type) {
 #define ECase(X) IO.enumCase(Type, #X, wasm::WASM_TYPE_##X);
   ECase(FUNCREF);
+  ECase(ANYREF);
 #undef ECase
 }
 

@@ -44,6 +44,7 @@ public:
   bool isGlobal() const { return Type == wasm::WASM_SYMBOL_TYPE_GLOBAL; }
   bool isSection() const { return Type == wasm::WASM_SYMBOL_TYPE_SECTION; }
   bool isEvent() const { return Type == wasm::WASM_SYMBOL_TYPE_EVENT; }
+  bool isTable() const { return Type == wasm::WASM_SYMBOL_TYPE_TABLE; }
   wasm::WasmSymbolType getType() const { return Type; }
   void setType(wasm::WasmSymbolType type) { Type = type; }
 

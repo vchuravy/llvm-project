@@ -225,6 +225,7 @@ enum : unsigned {
   WASM_TYPE_F64 = 0x7C,
   WASM_TYPE_V128 = 0x7B,
   WASM_TYPE_FUNCREF = 0x70,
+  WASM_TYPE_ANYREF = 0x6F,
   WASM_TYPE_EXNREF = 0x68,
   WASM_TYPE_FUNC = 0x60,
   WASM_TYPE_NORESULT = 0x40, // for blocks with no result values
@@ -313,6 +314,7 @@ enum WasmSymbolType : unsigned {
   WASM_SYMBOL_TYPE_GLOBAL = 0x2,
   WASM_SYMBOL_TYPE_SECTION = 0x3,
   WASM_SYMBOL_TYPE_EVENT = 0x4,
+  WASM_SYMBOL_TYPE_TABLE = 0x5,
 };
 
 // Kinds of event attributes.
@@ -348,6 +350,8 @@ enum class ValType {
   F32 = WASM_TYPE_F32,
   F64 = WASM_TYPE_F64,
   V128 = WASM_TYPE_V128,
+  FUNCREF = WASM_TYPE_FUNCREF,
+  ANYREF = WASM_TYPE_ANYREF,
   EXNREF = WASM_TYPE_EXNREF,
 };
 

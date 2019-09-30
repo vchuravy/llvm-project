@@ -4086,10 +4086,12 @@ void SelectionDAGBuilder::visitLoad(const LoadInst &I) {
       Root = Chain;
       ChainI = 0;
     }
-    SDValue A = DAG.getNode(ISD::ADD, dl,
-                            PtrVT, Ptr,
-                            DAG.getConstant(Offsets[i], dl, PtrVT),
-                            Flags);
+    SDValue A = Ptr;
+    if (Offsets[i] != 0)
+      A = DAG.getNode(ISD::ADD, dl,
+                      PtrVT, Ptr,
+                      DAG.getConstant(Offsets[i], dl, PtrVT),
+                      Flags);
     auto MMOFlags = MachineMemOperand::MONone;
     if (isVolatile)
       MMOFlags |= MachineMemOperand::MOVolatile;

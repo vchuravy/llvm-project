@@ -254,6 +254,7 @@ class WasmObjectWriter : public MCObjectWriter {
   unsigned NumFunctionImports = 0;
   unsigned NumGlobalImports = 0;
   unsigned NumEventImports = 0;
+  unsigned NumTableImports = 0;
   uint32_t SectionCount = 0;
 
   // TargetObjectWriter wrappers.
@@ -555,6 +556,7 @@ WasmObjectWriter::getProvisionalValue(const WasmRelocationEntry &RelEntry) {
   case wasm::R_WASM_FUNCTION_INDEX_LEB:
   case wasm::R_WASM_GLOBAL_INDEX_LEB:
   case wasm::R_WASM_EVENT_INDEX_LEB:
+  case wasm::R_WASM_TABLE_INDEX_LEB:
     // Provisional value is function/global/event Wasm index
     assert(WasmIndices.count(RelEntry.Symbol) > 0 && "symbol not found in wasm index space");
     return WasmIndices[RelEntry.Symbol];
@@ -652,6 +654,7 @@ void WasmObjectWriter::applyRelocations(
     case wasm::R_WASM_GLOBAL_INDEX_LEB:
     case wasm::R_WASM_MEMORY_ADDR_LEB:
     case wasm::R_WASM_EVENT_INDEX_LEB:
+    case wasm::R_WASM_TABLE_INDEX_LEB:
       writePatchableLEB(Stream, Value, Offset);
       break;
     case wasm::R_WASM_TABLE_INDEX_I32:
@@ -945,6 +948,7 @@ void WasmObjectWriter::writeLinkingMetaDataSection(
       case wasm::WASM_SYMBOL_TYPE_FUNCTION:
       case wasm::WASM_SYMBOL_TYPE_GLOBAL:
       case wasm::WASM_SYMBOL_TYPE_EVENT:
+      case wasm::WASM_SYMBOL_TYPE_TABLE:
         encodeULEB128(Sym.ElementIndex, W.OS);
         if ((Sym.Flags & wasm::WASM_SYMBOL_UNDEFINED) == 0 ||
             (Sym.Flags & wasm::WASM_SYMBOL_EXPLICIT_NAME) != 0)
@@ -1137,6 +1141,7 @@ uint64_t WasmObjectWriter::writeObject(MCAssembler &Asm,
   TableImport.Kind = wasm::WASM_EXTERNAL_TABLE;
   TableImport.Table.ElemType = wasm::WASM_TYPE_FUNCREF;
   Imports.push_back(TableImport);
+  NumTableImports++;
 
   // Populate SignatureIndices, and Imports and WasmIndices for undefined
   // symbols.  This must be done before populating WasmIndices for defined
@@ -1191,6 +1196,15 @@ uint64_t WasmObjectWriter::writeObject(MCAssembler &Asm,
         Imports.push_back(Import);
         assert(WasmIndices.count(&WS) == 0);
         WasmIndices[&WS] = NumEventImports++;
+      } else if (WS.isTable()) {
+        wasm::WasmImport Import;
+        Import.Module = WS.getImportModule();
+        Import.Field = WS.getImportName();
+        Import.Kind = wasm::WASM_EXTERNAL_TABLE;
+        Import.Table.ElemType = wasm::WASM_TYPE_ANYREF;
+        Imports.push_back(Import);
+        assert(WasmIndices.count(&WS) == 0);
+        WasmIndices[&WS] = NumTableImports++;
       }
     }
   }
@@ -1389,7 +1403,16 @@ uint64_t WasmObjectWriter::writeObject(MCAssembler &Asm,
       }
       LLVM_DEBUG(dbgs() << "  -> event index: " << WasmIndices.find(&WS)->second
                         << "\n");
-
+    } else if (WS.isTable()) {
+      unsigned Index;
+      if (WS.isDefined()) {
+        report_fatal_error("Defined tables are not supported yet");
+      } else {
+        // An import; the index was assigned above.
+        assert(WasmIndices.count(&WS) > 0);
+      }
+      LLVM_DEBUG(dbgs() << "  -> table index: " << WasmIndices.find(&WS)->second
+                        << "\n");
     } else {
       assert(WS.isSection());
     }

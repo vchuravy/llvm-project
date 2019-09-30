@@ -20,6 +20,8 @@ std::string llvm::wasm::toString(wasm::WasmSymbolType Type) {
     return "WASM_SYMBOL_TYPE_SECTION";
   case wasm::WASM_SYMBOL_TYPE_EVENT:
     return "WASM_SYMBOL_TYPE_EVENT";
+  case wasm::WASM_SYMBOL_TYPE_TABLE:
+    return "WASM_SYMBOL_TYPE_TABLE";
   }
   llvm_unreachable("unknown symbol type");
 }
