@@ -15,6 +15,7 @@
 #ifndef LLVM_LIB_TARGET_WEBASSEMBLY_WEBASSEMBLYISELLOWERING_H
 #define LLVM_LIB_TARGET_WEBASSEMBLY_WEBASSEMBLYISELLOWERING_H
 
+#include "WebAssembly.h"
 #include "llvm/CodeGen/TargetLowering.h"
 
 namespace llvm {
@@ -52,13 +53,15 @@ private:
   const WebAssemblySubtarget *Subtarget;
 
   MVT getPointerTy(const DataLayout &DL, uint32_t AS = 0) const override {
-    return AS == 1 ? MVT::anyref :
-      MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
+    return AS == WebAssemblyAS::ANYREF_ADDRESS
+               ? MVT::anyref
+               : MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
   }
 
   MVT getPointerMemTy(const DataLayout &DL, uint32_t AS = 0) const override {
-    return AS == 1 ? MVT::anyref :
-      MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
+    return AS == WebAssemblyAS::ANYREF_ADDRESS
+               ? MVT::anyref
+               : MVT::getIntegerVT(DL.getPointerSizeInBits(AS));
   }
 
   AtomicExpansionKind shouldExpandAtomicRMWInIR(AtomicRMWInst *) const override;
@@ -106,6 +109,7 @@ private:
 
   void ReplaceNodeResults(SDNode *N, SmallVectorImpl<SDValue> &Results,
                           SelectionDAG &DAG) const override;
+  bool isNoopAddrSpaceCast(unsigned SrcAS, unsigned DestAS) const override;
 
   const char *getClearCacheBuiltinName() const override {
     report_fatal_error("llvm.clear_cache is not supported on wasm");

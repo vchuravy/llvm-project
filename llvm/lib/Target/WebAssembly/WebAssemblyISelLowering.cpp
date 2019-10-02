@@ -13,6 +13,7 @@
 
 #include "WebAssemblyISelLowering.h"
 #include "MCTargetDesc/WebAssemblyMCTargetDesc.h"
+#include "WebAssembly.h"
 #include "WebAssemblyMachineFunctionInfo.h"
 #include "WebAssemblySubtarget.h"
 #include "WebAssemblyTargetMachine.h"
@@ -962,6 +963,14 @@ SDValue WebAssemblyTargetLowering::LowerFormalArguments(
   return Chain;
 }
 
+bool WebAssemblyTargetLowering::isNoopAddrSpaceCast(unsigned SrcAS,
+                                                    unsigned DestAS) const {
+  assert(SrcAS != DestAS && "Expected different address spaces!");
+
+  return SrcAS <= WebAssemblyAS::MAX_CUSTOM_ADDRESS &&
+         DestAS <= WebAssemblyAS::MAX_CUSTOM_ADDRESS;
+}
+
 void WebAssemblyTargetLowering::ReplaceNodeResults(
     SDNode *N, SmallVectorImpl<SDValue> &Results, SelectionDAG &DAG) const {
   switch (N->getOpcode()) {
@@ -1107,7 +1116,8 @@ SDValue WebAssemblyTargetLowering::LowerGlobalAddress(SDValue Op,
   EVT VT = Op.getValueType();
   assert(GA->getTargetFlags() == 0 &&
          "Unexpected target flags on generic GlobalAddressSDNode");
-  if (GA->getAddressSpace() != 0 && GA->getAddressSpace() != 1)
+  if (GA->getAddressSpace() != 0 &&
+      GA->getAddressSpace() != WebAssemblyAS::ANYREF_ADDRESS)
     fail(DL, DAG, "WebAssembly only expects the 0 or 1 address space");
 
   unsigned OperandFlags = 0;
@@ -1140,7 +1150,7 @@ SDValue WebAssemblyTargetLowering::LowerGlobalAddress(SDValue Op,
     }
   }
 
-  if (GA->getAddressSpace() == 1) {
+  if (GA->getAddressSpace() == WebAssemblyAS::ANYREF_ADDRESS) {
     OperandFlags = WebAssemblyII::MO_TABLE_INDEX;
   }
 

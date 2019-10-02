@@ -81,4 +81,12 @@ void initializeWebAssemblyCallIndirectFixupPass(PassRegistry &);
 
 } // end namespace llvm
 
+namespace WebAssemblyAS {
+enum : unsigned {
+  // The maxium value for custom address-spaces.
+  MAX_CUSTOM_ADDRESS = 255,
+  ANYREF_ADDRESS = 256, // Address space for anyref
+};
+}
+
 #endif

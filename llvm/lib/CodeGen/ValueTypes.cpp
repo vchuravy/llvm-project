@@ -441,7 +441,9 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
   case MVT::nxv8f64:
     return VectorType::get(Type::getDoubleTy(Context), 8, /*Scalable=*/ true);
   case MVT::Metadata: return Type::getMetadataTy(Context);
-  case MVT::anyref: return PointerType::get(Type::getInt8Ty(Context), 1);
+  case MVT::anyref:
+    return PointerType::get(Type::getInt8Ty(Context),
+                            256); // TODO: Fix AS for Webassembly
   }
 }
 
