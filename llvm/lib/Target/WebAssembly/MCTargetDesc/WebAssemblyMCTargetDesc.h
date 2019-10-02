@@ -48,7 +48,7 @@ enum OperandType {
   OPERAND_LOCAL,
   /// Global index.
   OPERAND_GLOBAL,
-  /// Global index.
+  /// Table index.
   OPERAND_TABLE,
   /// 32-bit integer immediates.
   OPERAND_I32IMM,

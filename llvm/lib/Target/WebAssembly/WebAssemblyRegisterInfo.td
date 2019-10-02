@@ -44,7 +44,6 @@ def F64_0 : WebAssemblyReg<"%f64.0">;
 def V128_0: WebAssemblyReg<"%v128">;
 
 def EXNREF_0 : WebAssemblyReg<"%exnref.0">;
-
 def ANYREF_0 : WebAssemblyReg<"%anyref.0">;
 
 // The value stack "register". This is an opaque entity which serves to order

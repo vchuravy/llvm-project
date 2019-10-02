@@ -820,7 +820,7 @@ Error WasmObjectFile::parseRelocSection(StringRef Name, ReadContext &Ctx) {
       break;
     case wasm::R_WASM_TABLE_INDEX_LEB:
       if (!isValidTableSymbol(Reloc.Index))
-        return make_error<GenericBinaryError>("Bad relocation event index",
+        return make_error<GenericBinaryError>("Bad relocation table index",
                                               object_error::parse_failed);
       break;
     case wasm::R_WASM_MEMORY_ADDR_LEB:
