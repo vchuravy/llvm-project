@@ -1404,7 +1404,6 @@ uint64_t WasmObjectWriter::writeObject(MCAssembler &Asm,
       LLVM_DEBUG(dbgs() << "  -> event index: " << WasmIndices.find(&WS)->second
                         << "\n");
     } else if (WS.isTable()) {
-      unsigned Index;
       if (WS.isDefined()) {
         report_fatal_error("Defined tables are not supported yet");
       } else {
