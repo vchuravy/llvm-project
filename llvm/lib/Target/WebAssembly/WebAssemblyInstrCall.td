@@ -143,6 +143,9 @@ def : Pat<(v2f64 (WebAssemblycall1 (WebAssemblywrapper tglobaladdr:$callee))),
 def : Pat<(exnref (WebAssemblycall1 (WebAssemblywrapper tglobaladdr:$callee))),
           (CALL_exnref tglobaladdr:$callee)>,
       Requires<[HasExceptionHandling]>;
+def : Pat<(anyref (WebAssemblycall1 (WebAssemblywrapper tglobaladdr:$callee))),
+          (CALL_anyref tglobaladdr:$callee)>,
+      Requires<[HasReferenceTypes]>;
 def : Pat<(WebAssemblycall0 (WebAssemblywrapper tglobaladdr:$callee)),
           (CALL_VOID tglobaladdr:$callee)>;
 def : Pat<(WebAssemblyretcall (WebAssemblywrapper tglobaladdr:$callee)),

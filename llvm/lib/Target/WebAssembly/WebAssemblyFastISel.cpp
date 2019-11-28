@@ -130,6 +130,7 @@ private:
     case MVT::f32:
     case MVT::f64:
     case MVT::exnref:
+    case MVT::anyref:
       return VT;
     case MVT::f16:
       return MVT::f32;
@@ -706,6 +707,10 @@ bool WebAssemblyFastISel::fastLowerArguments() {
       Opc = WebAssembly::ARGUMENT_exnref;
       RC = &WebAssembly::EXNREFRegClass;
       break;
+    case MVT::anyref:
+      Opc = WebAssembly::ARGUMENT_anyref;
+      RC = &WebAssembly::ANYREFRegClass;
+      break;
     default:
       return false;
     }
@@ -823,6 +828,11 @@ bool WebAssemblyFastISel::selectCall(const Instruction *I) {
       Opc = IsDirect ? WebAssembly::CALL_exnref
                      : WebAssembly::PCALL_INDIRECT_exnref;
       ResultReg = createResultReg(&WebAssembly::EXNREFRegClass);
+      break;
+    case MVT::anyref:
+      Opc = IsDirect ? WebAssembly::CALL_anyref
+                     : WebAssembly::PCALL_INDIRECT_anyref;
+      ResultReg = createResultReg(&WebAssembly::ANYREFRegClass);
       break;
     default:
       return false;
@@ -1329,6 +1339,7 @@ bool WebAssemblyFastISel::selectRet(const Instruction *I) {
   case MVT::v4f32:
   case MVT::v2f64:
   case MVT::exnref:
+  case MVT::anyref:
     break;
   default:
     return false;

@@ -310,6 +310,8 @@ public:
       return wasm::ValType::V128;
     if (Type == "exnref")
       return wasm::ValType::EXNREF;
+    if (Type == "anyref")
+      return wasm::ValType::ANYREF;
     return Optional<wasm::ValType>();
   }
 
@@ -322,6 +324,7 @@ public:
         .Case("f64", WebAssembly::BlockType::F64)
         .Case("v128", WebAssembly::BlockType::V128)
         .Case("exnref", WebAssembly::BlockType::Exnref)
+        .Case("anyref", WebAssembly::BlockType::Anyref)
         .Case("void", WebAssembly::BlockType::Void)
         .Default(WebAssembly::BlockType::Invalid);
   }
