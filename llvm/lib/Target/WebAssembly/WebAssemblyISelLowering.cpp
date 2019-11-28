@@ -1118,7 +1118,7 @@ SDValue WebAssemblyTargetLowering::LowerGlobalAddress(SDValue Op,
          "Unexpected target flags on generic GlobalAddressSDNode");
   if (GA->getAddressSpace() != 0 &&
       GA->getAddressSpace() != WebAssemblyAS::ANYREF_ADDRESS)
-    fail(DL, DAG, "WebAssembly only expects the 0 or 1 address space");
+    fail(DL, DAG, "WebAssembly only expects the 0 or 256 (anyref) address space");
 
   unsigned OperandFlags = 0;
   if (isPositionIndependent()) {
