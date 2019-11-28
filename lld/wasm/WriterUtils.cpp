@@ -31,7 +31,7 @@ std::string toString(ValType type) {
   case ValType::V128:
     return "v128";
   case ValType::FUNCREF:
-    return "func";
+    return "funcref";
   case ValType::ANYREF:
     return "anyref"
   case ValType::EXNREF:
