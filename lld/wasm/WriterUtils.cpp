@@ -33,7 +33,7 @@ std::string toString(ValType type) {
   case ValType::FUNCREF:
     return "funcref";
   case ValType::ANYREF:
-    return "anyref"
+    return "anyref";
   case ValType::EXNREF:
     return "exnref";
   }

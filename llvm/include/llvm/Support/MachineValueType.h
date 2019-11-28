@@ -825,7 +825,7 @@ namespace llvm {
       case v1024f32:  return TypeSize::Fixed(32768);
       case v2048i32:
       case v2048f32:  return TypeSize::Fixed(65536);
-      case anyref: 
+      case anyref:
       case exnref: return TypeSize::Fixed(0); // opaque type
       }
     }
