@@ -3114,6 +3114,9 @@ void SelectionDAGBuilder::visitUnary(const User &I, unsigned Opcode) {
 
 void SelectionDAGBuilder::visitBinary(const User &I, unsigned Opcode) {
   SDNodeFlags Flags;
+  if (auto *FPOp = dyn_cast<FPMathOperator>(&I)) {
+    Flags.copyFMF(*FPOp);
+  }
   if (auto *OFBinOp = dyn_cast<OverflowingBinaryOperator>(&I)) {
     Flags.setNoSignedWrap(OFBinOp->hasNoSignedWrap());
     Flags.setNoUnsignedWrap(OFBinOp->hasNoUnsignedWrap());
