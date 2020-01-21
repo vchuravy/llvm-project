@@ -60,7 +60,7 @@ public:
 };
 }
 
-FunctionPass *llvm::createNVVMReflectPass(unsigned int SmVersion) {
+LLVM_EXTERNAL_VISIBILITY FunctionPass *llvm::createNVVMReflectPass(unsigned int SmVersion) {
   return new NVVMReflect(SmVersion);
 }
 
