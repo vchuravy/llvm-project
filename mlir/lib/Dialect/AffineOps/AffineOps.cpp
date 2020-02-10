@@ -1562,6 +1562,11 @@ LogicalResult AffineForOp::moveOutOfLoop(ArrayRef<Operation *> ops) {
   return success();
 }
 
+//TODO right now we only do postdominator
+bool AffineForOp::isGuaranteedToExecute(Operation* oper, DominanceInfo& dom, PostDominanceInfo &pdom) {
+  return pdom.postDominates(oper->getBlock(), getBody());
+}
+
 /// Returns if the provided value is the induction variable of a AffineForOp.
 bool mlir::isForInductionVar(Value val) {
   return getForInductionVarOwner(val) != AffineForOp();
