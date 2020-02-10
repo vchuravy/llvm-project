@@ -149,6 +149,13 @@ struct ParallelLowering : public OpRewritePattern<mlir::loop::ParallelOp> {
   PatternMatchResult matchAndRewrite(mlir::loop::ParallelOp parallelOp,
                                      PatternRewriter &rewriter) const override;
 };
+
+struct NaturalLoopLowering : public OpRewritePattern<NaturalLoopOp> {
+  using OpRewritePattern<NaturalLoopOp>::OpRewritePattern;
+
+  PatternMatchResult matchAndRewrite(NaturalLoopOp loop,
+                                     PatternRewriter &rewriter) const override;
+};
 } // namespace
 
 PatternMatchResult
@@ -280,9 +287,40 @@ ParallelLowering::matchAndRewrite(ParallelOp parallelOp,
   return matchSuccess();
 }
 
+PatternMatchResult
+NaturalLoopLowering::matchAndRewrite(NaturalLoopOp loop, PatternRewriter &rewriter) const {
+  Location loc = loop.getLoc();
+  BlockAndValueMapping mapping;
+  Block *header = loop.getBody();
+  Block *entryBlock = rewriter.getInsertionBlock();
+  Block *exitBlock = rewriter.splitBlock(entryBlock, rewriter.getInsertionPoint());
+  exitBlock->addArguments(loop.getResultTypes());
+
+  // find latches and exiting blocks
+  // canonicalize will hopefully get rid of these unecessary branches
+  for (Block &block: loop.getLoopBody()){
+    Operation *terminator = block.getTerminator();
+    if (auto naturalReturn = dyn_cast<NaturalReturnOp>(terminator)){
+      rewriter.setInsertionPointAfter(terminator);
+      rewriter.replaceOpWithNewOp<BranchOp>(terminator, exitBlock, terminator->getOperands());
+    } else if (auto naturalNext = dyn_cast<NaturalNextOp>(terminator)) {
+      rewriter.setInsertionPointAfter(terminator);
+      rewriter.replaceOpWithNewOp<BranchOp>(terminator, header, terminator->getOperands());
+    }
+  }
+
+  // enter the loop
+  rewriter.setInsertionPointToEnd(entryBlock);
+  rewriter.create<BranchOp>(loc, header, loop.getOperands());
+
+  rewriter.inlineRegionBefore(loop.getLoopBody(), exitBlock);
+  rewriter.eraseOp(loop);
+  return matchSuccess();
+}
+
 void mlir::populateLoopToStdConversionPatterns(
     OwningRewritePatternList &patterns, MLIRContext *ctx) {
-  patterns.insert<ForLowering, IfLowering, ParallelLowering>(ctx);
+  patterns.insert<ForLowering, IfLowering, ParallelLowering, NaturalLoopLowering>(ctx);
 }
 
 void LoopToStandardPass::runOnOperation() {

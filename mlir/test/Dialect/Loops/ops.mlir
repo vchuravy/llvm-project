@@ -26,6 +26,36 @@ func @std_for(%arg0 : index, %arg1 : index, %arg2 : index) {
 //  CHECK-NEXT:       %{{.*}} = select %{{.*}}, %{{.*}}, %{{.*}} : index
 //  CHECK-NEXT:       loop.for %{{.*}} = %{{.*}} to %{{.*}} step %{{.*}} {
 
+func @std_naturalloop(%arg0: index) {
+  %start = constant 0 : index
+  loop.natural(%i)(%start: index) {
+      %cond = cmpi "eq", %i, %arg0 : index
+      cond_br %cond, ^critical.edge, ^bb1
+    ^bb1:
+      %incr = constant 1 : index
+      %1 = addi %i, %incr : index
+      loop.natural.next %1: index
+    ^critical.edge:
+      loop.natural.return
+  }
+  return
+}
+
+func @std_naturalloopred(%arg0: index) -> (index) {
+  %start = constant 0 : index
+  %end = loop.natural(%i)(%start: index) {
+      %cond = cmpi "eq", %i, %arg0 : index
+      cond_br %cond, ^critical.edge, ^bb1
+    ^bb1:
+      %incr = constant 1 : index
+      %1 = addi %i, %incr : index
+      loop.natural.next %1: index
+    ^critical.edge:
+      loop.natural.return %i: index
+  } : index
+  return %end: index
+}
+
 func @std_if(%arg0: i1, %arg1: f32) {
   loop.if %arg0 {
     %0 = addf %arg1, %arg1 : f32

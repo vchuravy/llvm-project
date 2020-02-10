@@ -418,6 +418,214 @@ static LogicalResult verify(ReduceReturnOp op) {
 }
 
 //===----------------------------------------------------------------------===//
+// NaturalLoopOp
+//===----------------------------------------------------------------------===//
+
+void NaturalLoopOp::build(Builder *builder, OperationState &result,
+                          ArrayRef<Type> results, ValueRange arguments) {
+  result.addOperands(arguments);
+  Region *body = result.addRegion();
+  body->push_back(new Block);
+  result.addTypes(results);
+
+  for (auto arg: arguments) {
+    body->front().addArgument(arg.getType());
+  }
+  // We do not ensure a terminator here
+}
+
+static LogicalResult verify(NaturalLoopOp op) {
+  // things to verify:
+  // 1. number of arguments == number of ivs
+  // 2. atleast one `loop.natural.return`
+  // 3. atleast one `loop.next`
+  return success();
+}
+
+static ParseResult parseNaturalLoopOp(OpAsmParser &parser, OperationState &result) {
+  // Parse an opening `(` followed by induction variables followed by `)`
+  SmallVector<OpAsmParser::OperandType, 4> ivs;
+  if (parser.parseRegionArgumentList(ivs, /*requiredOperandCount=*/-1,
+                                     OpAsmParser::Delimiter::Paren))
+    return failure();
+
+  // Parse the initial values (%arg1:type)
+  SmallVector<OpAsmParser::OperandType, 4> operands;
+  SmallVector<Type, 4> types;
+
+  auto parseArgument = [&]() -> ParseResult {
+    // parse an operand name with a colon type
+    OpAsmParser::OperandType operand;
+    Type type;
+
+    if (parser.parseOperand(operand) ||
+        parser.parseColonType(type)) {
+      return failure();
+    }
+    parser.resolveOperand(operand, type, result.operands);
+    operands.push_back(operand);
+    types.push_back(type);
+    return success();
+  };
+
+  parser.parseLParen();
+  if (failed(parser.parseOptionalRParen())) {
+    do {
+      if (parseArgument())
+        return failure();
+    } while (succeeded(parser.parseOptionalComma()));
+    parser.parseRParen();
+  }
+
+  // Now parse the body.
+  Region *body = result.addRegion();
+  if (parser.parseRegion(*body, ivs, types))
+    return failure();
+
+  // Parse attributes and optional results (in case there is a reduce).
+  if (parser.parseOptionalAttrDict(result.attributes) ||
+      parser.parseOptionalColonTypeList(result.types))
+    return failure();
+
+  return success();
+}
+
+static void print(OpAsmPrinter &p, NaturalLoopOp op) {
+  p << op.getOperationName() << " (";
+  p.printOperands(op.getBody()->getArguments());
+  p << ") (";
+  interleaveComma(llvm::zip(op.getOperands(), op.getOperandTypes()), p,
+                  [&](const std::tuple<Value, Type> &t) {
+                    p.printOperand(std::get<0>(t));
+                    p << " : ";
+                    p << std::get<1>(t);
+                  });
+  p << ")";
+  p.printRegion(op.region(), /*printEntryBlockArgs=*/false);
+  p.printOptionalAttrDict(op.getAttrs());
+  if (!op.results().empty())
+    p << " : " << op.getResultTypes();
+}
+
+Region &NaturalLoopOp::getLoopBody() { return region(); }
+
+bool NaturalLoopOp::isDefinedOutsideOfLoop(Value value) {
+  // 1. Check whether value is pre-header.
+  // This only makes sense iff entry-block corresponds to pre-header.
+  // Block *owningBlock;
+  // if (auto definingOp = value.getDefiningOp()) {
+  //   owningBlock = definingOp->getBlock();
+  // } else {
+  //   owningBlock = cast<BlockArgument>(value).getOwner();
+  // }
+  // assert(owningBlock);
+
+  // if (owningBlock->isEntryBlock()) {
+  //   return true;
+  // }
+  // 2. Check if value is coming from parent region.
+  return !region().isAncestor(value.getParentRegion());
+}
+
+LogicalResult NaturalLoopOp::moveOutOfLoop(ArrayRef<Operation *> ops) {
+  // Create pre-header
+  // - Need to know that we execute at least once...
+  // Block *preHeader = getBody();
+  // for (auto op : ops)
+  //   op->moveBefore(preHeader, preHeader->end());
+  for (auto op : ops)
+    op->moveBefore(this->getOperation());
+  return success();
+  // return failure();
+}
+
+//===----------------------------------------------------------------------===//
+// NaturalReturnOp
+//===----------------------------------------------------------------------===//
+
+static LogicalResult verify(NaturalReturnOp op) {
+  NaturalLoopOp loop = cast<NaturalLoopOp>(op.getParentOp());
+
+  // The operand number and types must match the loop signature.
+  const auto &results = loop.getResults();
+  if (op.getNumOperands() != results.size()) {
+    return op.emitOpError()
+      << "does not return the same number of values ("
+      << op.getNumOperands() << ") as the enclosing loop ("
+      << results.size() << ")";
+  }
+
+  for (unsigned i = 0, e = results.size(); i != e; ++i) {
+    if (op.getOperand(i).getType() != results[i].getType()) {
+      return op.emitError()
+             << "type of return operand " << i << " ("
+             << op.getOperand(i).getType()
+             << ") doesn't match function result type (" << results[i].getType() << ")";
+    }
+  }
+
+  return success();
+}
+
+static ParseResult parseNaturalReturnOp(OpAsmParser &parser, OperationState &result) {
+  SmallVector<OpAsmParser::OperandType, 2> opInfo;
+  SmallVector<Type, 2> types;
+  llvm::SMLoc loc = parser.getCurrentLocation();
+  return failure(parser.parseOperandList(opInfo) ||
+                 (!opInfo.empty() && parser.parseColonTypeList(types)) ||
+                 parser.resolveOperands(opInfo, types, loc, result.operands));
+}
+
+static void print(OpAsmPrinter &p, NaturalReturnOp op) {
+  p << op.getOperationName();
+  if (op.getNumOperands() != 0)
+    p << ' ' << op.getOperands() << " : " << op.getOperandTypes();
+}
+
+//===----------------------------------------------------------------------===//
+// NaturalNextOp
+//===----------------------------------------------------------------------===//
+
+static LogicalResult verify(NaturalNextOp op) {
+  NaturalLoopOp loop = cast<NaturalLoopOp>(op.getParentOp());
+
+  // The operand number and types must match the loop induction variables.
+  if (op.getNumOperands() != loop.getNumInductionVars()) {
+    return op.emitOpError()
+      << "does not take the same number of values ("
+      << op.getNumOperands() << ") as the enclosing loop requires ("
+      << loop.getNumInductionVars() << ")";
+  }
+
+  for (auto it : llvm::zip(op.getOperands(), loop.getInductionVars())) {
+    auto operand = std::get<0>(it);
+    auto iv = std::get<1>(it);
+
+    if (operand.getType() != iv.getType()) {
+      return op.emitError()
+             << "type of return operand ("
+             << operand.getType()
+             << ") doesn't match function result type (" << iv.getType() << ")";
+    }
+  }
+  return success();
+}
+
+static ParseResult parseNaturalNextOp(OpAsmParser &parser, OperationState &result) {
+  SmallVector<OpAsmParser::OperandType, 2> opInfo;
+  SmallVector<Type, 2> types;
+  llvm::SMLoc loc = parser.getCurrentLocation();
+  return failure(parser.parseOperandList(opInfo) ||
+                 (!opInfo.empty() && parser.parseColonTypeList(types)) ||
+                 parser.resolveOperands(opInfo, types, loc, result.operands));
+}
+
+static void print(OpAsmPrinter &p, NaturalNextOp op) {
+  p << op.getOperationName();
+  if (op.getNumOperands() != 0)
+    p << ' ' << op.getOperands() << " : " << op.getOperandTypes();
+}
+//===----------------------------------------------------------------------===//
 // TableGen'd op method definitions
 //===----------------------------------------------------------------------===//
 

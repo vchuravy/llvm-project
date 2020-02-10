@@ -273,4 +273,51 @@ def TerminatorOp : Loop_Op<"terminator", [Terminator]> {
   let verifier = ?;
 }
 
+def NaturalLoopOp : Loop_Op<"natural",
+      [DeclareOpInterfaceMethods<LoopLikeOpInterface>]> {
+  let summary = "natural loop operation";
+  let description = [{
+    The "loop.natural" operations represents a loop nest as you would encounter
+    it in unstructured SSA like LLVM IR.
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$arguments);
+  let results = (outs Variadic<AnyType>:$results);
+  let regions = (region AnyRegion:$region);
+
+  let skipDefaultBuilders = 1;
+  let builders = [
+    OpBuilder<"Builder *builder, OperationState &result, "
+              "ArrayRef<Type> results, ValueRange arguments">
+  ];
+
+
+
+  let extraClassDeclaration = [{
+    Block *getBody() { return &region().front(); }
+    iterator_range<Block::args_iterator> getInductionVars() {
+      return {getBody()->args_begin(), getBody()->args_end()};
+    }
+    unsigned getNumInductionVars() {
+      return getBody()->getNumArguments();
+    }
+  }];
+}
+
+def NaturalReturnOp : Loop_Op<"natural.return", [Terminator, HasParent<"NaturalLoopOp">]> {
+  let summary = "return operation";
+  let description = [{
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$operands);
+}
+
+def NaturalNextOp : Loop_Op<"natural.next", [Terminator, HasParent<"NaturalLoopOp">]> {
+  let summary = "next operation";
+  let description = [{
+  }];
+
+  let arguments = (ins Variadic<AnyType>:$operands);
+}
+
 #endif // LOOP_OPS
