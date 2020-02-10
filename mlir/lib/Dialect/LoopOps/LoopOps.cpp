@@ -537,10 +537,10 @@ LogicalResult NaturalLoopOp::moveOutOfLoop(ArrayRef<Operation *> ops) {
   // Block *preHeader = getBody();
   // for (auto op : ops)
   //   op->moveBefore(preHeader, preHeader->end());
-  //for (auto op : ops)
-  //  op->moveBefore(this->getOperation());
-  //return success();
-  return failure();
+  for (auto op : ops)
+    op->moveBefore(this->getOperation());
+  return success();
+  // return failure();
 }
 
 //===----------------------------------------------------------------------===//
