@@ -13,6 +13,7 @@
 #ifndef MLIR_TRANSFORMS_LOOPLIKEINTERFACE_H_
 #define MLIR_TRANSFORMS_LOOPLIKEINTERFACE_H_
 
+#include "mlir/Analysis/Dominance.h"
 #include "mlir/IR/OpDefinition.h"
 #include "mlir/Support/LogicalResult.h"
 #include "llvm/ADT/ArrayRef.h"

@@ -20,6 +20,7 @@
 #include "mlir/IR/Value.h"
 #include "mlir/Support/MathExtras.h"
 #include "mlir/Support/STLExtras.h"
+#include "mlir/Analysis/Dominance.h"
 #include "mlir/Transforms/SideEffectsInterface.h"
 
 using namespace mlir;
@@ -132,6 +133,11 @@ LogicalResult ForOp::moveOutOfLoop(ArrayRef<Operation *> ops) {
   for (auto op : ops)
     op->moveBefore(this->getOperation());
   return success();
+}
+
+bool ForOp::isGuaranteedToExecute(Operation* oper, DominanceInfo& dom, PostDominanceInfo &pdom) {
+  //return pdom.postDominates(oper->getBlock(), getBody());
+  return true;
 }
 
 ForOp mlir::loop::getForInductionVarOwner(Value val) {
@@ -537,6 +543,11 @@ LogicalResult NaturalLoopOp::moveOutOfLoop(ArrayRef<Operation *> ops) {
     op->moveBefore(this->getOperation());
   return success();
   // return failure();
+}
+
+//TODO right now we only do postdominator
+bool NaturalLoopOp::isGuaranteedToExecute(Operation* oper, DominanceInfo& dom, PostDominanceInfo &pdom) {
+  return pdom.postDominates(oper->getBlock(), getBody());
 }
 
 //===----------------------------------------------------------------------===//

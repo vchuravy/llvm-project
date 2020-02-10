@@ -74,7 +74,9 @@ static bool canBeHoisted(Operation *op,
 }
 
 static LogicalResult moveLoopInvariantCode(LoopLikeOpInterface looplike,
-                                           SideEffectsInterface &interface) {
+                                           SideEffectsInterface &interface,
+                                           DominanceInfo &dom,
+                                           PostDominanceInfo &pdom) {
   auto &loopBody = looplike.getLoopBody();
 
   // We use two collections here as we need to preserve the order for insertion
@@ -94,7 +96,13 @@ static LogicalResult moveLoopInvariantCode(LoopLikeOpInterface looplike,
   // rewriting. If the nested regions are loops, they will have been processed.
   for (auto &block : loopBody) {
     for (auto &op : block.without_terminator()) {
-      if (canBeHoisted(&op, isDefinedOutsideOfBody,
+      // Check whether this is always executed
+     if (!looplike.isGuaranteedToExecute(&op, dom, pdom)) {
+         llvm::errs() << " not guaranteed to execute\n";// << op << "\n";
+         continue;
+     }
+
+     if (canBeHoisted(&op, isDefinedOutsideOfBody,
                        mlir::SideEffectsDialectInterface::Recursive,
                        interface)) {
         opsToMove.push_back(&op);
@@ -117,13 +125,16 @@ void LoopInvariantCodeMotion::runOnOperation() {
   // Walk through all loops in a function in innermost-loop-first order. This
   // way, we first LICM from the inner loop, and place the ops in
   // the outer loop, which in turn can be further LICM'ed.
+  DominanceInfo &dom = getAnalysis<DominanceInfo>();
+  PostDominanceInfo &pdom = getAnalysis<PostDominanceInfo>();
   getOperation()->walk([&](Operation *op) {
     if (auto looplike = dyn_cast<LoopLikeOpInterface>(op)) {
       LLVM_DEBUG(op->print(llvm::dbgs() << "\nOriginal loop\n"));
-      if (failed(moveLoopInvariantCode(looplike, interface)))
+      if (failed(moveLoopInvariantCode(looplike, interface, dom, pdom)))
         signalPassFailure();
     }
   });
+  markAnalysesPreserved<DominanceInfo, PostDominanceInfo>();
 }
 
 // Include the generated code for the loop-like interface here, as it otherwise

@@ -29,7 +29,7 @@ def LoopLikeOpInterface : OpInterface<"LoopLikeOpInterface"> {
         explicit capture of dependencies, an implementation could check whether
         the value corresponds to a captured dependency.
       }],
-      "bool", "isDefinedOutsideOfLoop", (ins "Value ":$value)
+      "bool", "isDefinedOutsideOfLoop", (ins "Value":$value)
     >,
     InterfaceMethod<[{
         Returns the region that makes up the body of the loop and should be
@@ -43,6 +43,12 @@ def LoopLikeOpInterface : OpInterface<"LoopLikeOpInterface"> {
       }],
       "LogicalResult", "moveOutOfLoop", (ins "ArrayRef<Operation *>":$ops)
     >,
+    InterfaceMethod<[{
+        Returns whether the following operation is guaranteed to be executed if this
+        loop operation is executed
+    }],
+      "bool", "isGuaranteedToExecute", (ins "Operation*": $oper, "DominanceInfo&": $dom, "PostDominanceInfo&": $pdom)
+    >
   ];
 }
 
