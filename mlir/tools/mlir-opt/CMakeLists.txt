@@ -89,8 +89,12 @@ if(MLIR_CUDA_CONVERSIONS_ENABLED)
     MLIRGPUtoCUDATransforms
   )
 endif()
+
 add_llvm_tool(mlir-opt
  mlir-opt.cpp
+ # TODO THIS IS HORRIBLY BROKEN
+ # DEPENDS
+ #${FULL_LINK_LIBS} ${LIBS}
 )
 llvm_update_compile_flags(mlir-opt)
 # It is necessary to use whole_archive_link to ensure that all static

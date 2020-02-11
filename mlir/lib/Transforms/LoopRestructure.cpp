@@ -19,16 +19,14 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 
+#include "mlir/Dialect/LoopOps/LoopOps.h"
+
 using namespace mlir;
 
 #define DEBUG_TYPE "NaturalLoops"
 
 namespace {
   struct LoopRestructure : public OperationPass<LoopRestructure> {
-    LoopRestructure() = default;
-    LoopRestructure(const LoopRestructure &) {}
-
-
     void runOnOperation() override;
   };
 
@@ -38,15 +36,18 @@ namespace {
  /// result does / not depend on use list (block predecessor) order.
  ///
  
-
 void regionMagic(DominanceInfo &domInfo, Region& region);
 
 void LoopRestructure::runOnOperation() {
   DominanceInfo &domInfo = getAnalysis<DominanceInfo>();
+  getOperation()->walk([&](Operation *op) {
+	llvm::errs() << "running on operation: " << op << "\n";
 
-  for (Region &region : getOperation()->getRegions()) {
+  for (Region &region : op->getRegions()) {
 	regionMagic(domInfo, region);
   }
+  });
+
 
 }
 
@@ -82,13 +83,36 @@ void regionMagic(DominanceInfo &domInfo, Region& region) {
    auto DomRoot = domInfo.getRootNode(&region);
 
    mlir::LoopInfo LI(*DT);
-
+   llvm::errs() << "calling for region: " << &region << "\n";
    for(auto L : LI) {
      llvm::errs() << " found mlir loop " << *L << "\n";
+    
+	 // Create a caller block that will contain the loop op
+
+	 // Set branches into loop (header) to branch into caller block
+
+     // Create loop operation in caller block
+
+     // Move loop header and loop blocks into loop operation
+
+     // Replace branch to exit block with a new block that calls loop.natural.terminate
+     //  In caller block, branch to correct exit block
+
+     // For each back edge create a new block and replace the destination of that edge with said new block
+     //    in that new block call llvm.natural.nextiteration 
+
+     // Rewrite IV's
+
+     // Rewrite values used outside of loop
+
+     // Assert we only have one exit Later: Create new block for each exit
+
+     // Create block for 
+	 //OpBuilder builder(L->getPreheader());
+	 L->getHeader();
    }
 
 }
-
 
 std::unique_ptr<Pass> mlir::createLoopRestructurePass() { return std::make_unique<LoopRestructure>(); }
 
