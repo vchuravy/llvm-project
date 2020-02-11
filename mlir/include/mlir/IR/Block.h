@@ -324,6 +324,8 @@ public:
   void printAsOperand(raw_ostream &os, bool printType = true);
   void printAsOperand(raw_ostream &os, AsmState &state);
 
+  bool isLegalToHoistInto();
+
 private:
   /// Pair of the parent object that owns this block and a bit that signifies if
   /// the operations within this block have a valid ordering.
@@ -340,6 +342,11 @@ private:
 
   friend struct llvm::ilist_traits<Block>;
 };
+
+inline raw_ostream &operator<<(raw_ostream &os, Block &op) {
+  op.print(os);
+  return os;
+}
 } // end namespace mlir
 
 #endif // MLIR_IR_BLOCK_H

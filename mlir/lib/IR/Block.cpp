@@ -60,6 +60,11 @@ void Block::moveBefore(Block *block) {
       block->getIterator(), getParent()->getBlocks(), getIterator());
 }
 
+//TODO: note determine what restrictions should exist
+bool Block::isLegalToHoistInto() {
+    return true;
+}
+
 /// Unlink this Block from its parent Region and delete it.
 void Block::erase() {
   assert(getParent() && "Block has no parent");

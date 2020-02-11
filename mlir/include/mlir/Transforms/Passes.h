@@ -78,6 +78,10 @@ createLoopFusionPass(unsigned fastMemorySpace = 0,
 /// instructions out of the loop.
 std::unique_ptr<Pass> createLoopInvariantCodeMotionPass();
 
+/// Rewrite CFG loops to use the natural loop operation construct
+std::unique_ptr<Pass>
+createLoopRestructurePass();
+
 /// Creates a loop invariant code motion pass that hoists loop invariant
 /// instructions out of affine loop.
 std::unique_ptr<OpPassBase<FuncOp>> createAffineLoopInvariantCodeMotionPass();

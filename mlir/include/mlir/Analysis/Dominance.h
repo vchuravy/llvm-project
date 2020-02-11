@@ -45,7 +45,7 @@ protected:
 
   /// Return true if the specified block A properly dominates block B.
   bool properlyDominates(Block *a, Block *b);
-
+public:
   /// A mapping of regions to their base dominator tree.
   DenseMap<Region *, std::unique_ptr<base>> dominanceInfos;
 };
