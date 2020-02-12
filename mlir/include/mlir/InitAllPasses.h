@@ -62,6 +62,7 @@ inline void registerAllPasses() {
   createSimplifyAffineStructuresPass();
   createLoopFusionPass();
   createLoopInvariantCodeMotionPass();
+  createLoopRestructurePass();
   createAffineLoopInvariantCodeMotionPass();
   createPipelineDataTransferPass();
   createLowerAffinePass();
