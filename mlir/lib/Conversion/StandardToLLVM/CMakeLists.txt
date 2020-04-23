@@ -6,6 +6,7 @@ add_mlir_conversion_library(MLIRStandardToLLVM
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRCallInterfacesIncGen
 )
 target_link_libraries(
   MLIRStandardToLLVM
