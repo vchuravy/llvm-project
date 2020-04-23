@@ -6,6 +6,7 @@ add_mlir_dialect_library(MLIRAVX512
 
   DEPENDS
   MLIRAVX512IncGen
+  MLIRSideEffectOpInterfacesIncGen
   )
 target_link_libraries(MLIRAVX512
   PUBLIC

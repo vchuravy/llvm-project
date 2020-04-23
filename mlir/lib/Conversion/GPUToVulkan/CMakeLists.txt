@@ -4,6 +4,7 @@ add_mlir_conversion_library(MLIRGPUtoVulkanTransforms
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
   )
 
 target_link_libraries(MLIRGPUtoVulkanTransforms

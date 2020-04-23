@@ -13,6 +13,7 @@ add_mlir_dialect_library(MLIRGPU
   MLIRGPUPassIncGen
   MLIRParallelLoopMapperAttrGen
   MLIRParallelLoopMapperEnumsGen
+  MLIRSideEffectOpInterfacesIncGen
   )
 target_link_libraries(MLIRGPU
   PUBLIC

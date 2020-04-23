@@ -6,6 +6,7 @@ add_mlir_conversion_library(MLIRLinalgToLLVM
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRLoopLikeInterfaceIncGen
 )
 
 target_link_libraries(MLIRLinalgToLLVM
