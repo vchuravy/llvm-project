@@ -7,6 +7,7 @@ add_mlir_conversion_library(MLIRStandardToLLVM
   DEPENDS
   MLIRConversionPassIncGen
   MLIRCallInterfacesIncGen
+  MLIRSideEffectOpInterfacesIncGen
 )
 target_link_libraries(
   MLIRStandardToLLVM
