@@ -31,11 +31,14 @@ endif()
 # This probably won't work if some LLVM components are not included
 # in libLLVM.so.
 if(LLVM_BUILD_LLVM_DYLIB)
-  add_llvm_library(MLIR
+  add_llvm_library(
+    MLIR
     SHARED
     ${INSTALL_WITH_TOOLCHAIN}
-
     mlir-shlib.cpp
-    )
+    ${_OBJECTS}
+    LINK_LIBS
+    ${_DEPS}
+  )
   target_link_libraries(MLIR PRIVATE LLVM ${LLVM_PTHREAD_LIB})
 endif()
