@@ -6,6 +6,7 @@ add_mlir_translation_library(MLIRTargetLLVMIRModuleTranslation
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Target/LLVMIR
   DEPENDS
   intrinsics_gen
+  MLIRCallInterfacesIncGen
   )
 target_link_libraries(MLIRTargetLLVMIRModuleTranslation
   PUBLIC
