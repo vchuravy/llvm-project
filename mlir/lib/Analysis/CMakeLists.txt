@@ -20,6 +20,9 @@ add_mlir_library(MLIRAnalysis
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Analysis
+  DEPENDS
+  MLIRCallInterfacesIncGen
+  MLIRLoopLikeInterfaceIncGen
   )
 
 target_link_libraries(MLIRAnalysis
