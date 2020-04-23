@@ -6,6 +6,7 @@ add_mlir_conversion_library(MLIRVectorToLLVM
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
 )
 
 target_link_libraries(MLIRVectorToLLVM

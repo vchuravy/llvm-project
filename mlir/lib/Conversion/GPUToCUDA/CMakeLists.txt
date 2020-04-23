@@ -20,6 +20,7 @@ add_mlir_conversion_library(MLIRGPUtoCUDATransforms
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
 )
 target_link_libraries(MLIRGPUtoCUDATransforms
   PUBLIC

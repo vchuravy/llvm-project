@@ -6,6 +6,7 @@ add_mlir_conversion_library(MLIRLoopToStandard
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
 )
 target_link_libraries(
   MLIRLoopToStandard

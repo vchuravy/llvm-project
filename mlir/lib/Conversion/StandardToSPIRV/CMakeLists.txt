@@ -9,6 +9,7 @@ add_mlir_conversion_library(MLIRStandardToSPIRVTransforms
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
   )
 
 target_link_libraries(MLIRStandardToSPIRVTransforms

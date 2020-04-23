@@ -8,6 +8,7 @@ add_mlir_dialect_library(MLIRLoopOps
 
   DEPENDS
   MLIRLoopOpsIncGen
+  MLIRLoopLikeInterfaceIncGen
   )
 target_link_libraries(MLIRLoopOps
   PUBLIC

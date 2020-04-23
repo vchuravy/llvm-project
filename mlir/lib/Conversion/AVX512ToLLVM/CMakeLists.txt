@@ -6,6 +6,7 @@ add_mlir_conversion_library(MLIRAVX512ToLLVM
 
   DEPENDS
   MLIRConversionPassIncGen
+  MLIRSideEffectOpInterfacesIncGen
 )
 
 target_link_libraries(MLIRAVX512ToLLVM

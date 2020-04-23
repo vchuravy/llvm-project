@@ -6,6 +6,7 @@ add_mlir_dialect_library(MLIRLinalgEDSC
 
   DEPENDS
   intrinsics_gen
+  MLIRLinalgStructuredOpsInterfaceIncGen
   )
 
 target_link_libraries(MLIRLinalgEDSC
