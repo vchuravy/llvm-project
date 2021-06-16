@@ -49,6 +49,12 @@ typedef LLVMOrcObjectLayerRef (
     void *Ctx, LLVMOrcExecutionSessionRef ES, const char *Triple);
 
 /**
+ */
+typedef void (
+    *LLVMOrcIRTransformLayerTransformFunction)(
+    void *Ctx, LLVMModuleRef Mod, LLVMOrcMaterializationResponsibilityRef MR);
+
+/**
  * A reference to an orc::LLJITBuilder instance.
  */
 typedef struct LLVMOrcOpaqueLLJITBuilder *LLVMOrcLLJITBuilderRef;
@@ -215,6 +221,16 @@ LLVMErrorRef LLVMOrcLLJITLookup(LLVMOrcLLJITRef J,
  * Returns a non-owning reference to the LLJIT instance's object linking layer.
  */
 LLVMOrcObjectLayerRef LLVMOrcLLJITGetObjLinkingLayer(LLVMOrcLLJITRef J);
+
+/**
+ * Returns a non-owning reference to the LLJIT instance's IR transform layer.
+ */
+LLVMOrcIRTransformLayerRef LLVMOrcLLJITGetIRTransformLayer(LLVMOrcLLJITRef J);
+
+
+void LLVMOrcLLJITIRTransformLayerSetTransform(
+    LLVMOrcIRTransformLayerRef TransformLayer,
+    LLVMOrcIRTransformLayerTransformFunction F, void *Ctx);
 
 LLVM_C_EXTERN_C_END
 

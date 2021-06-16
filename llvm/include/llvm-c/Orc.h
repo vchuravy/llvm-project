@@ -620,6 +620,10 @@ LLVMOrcCreateNewThreadSafeModule(LLVMModuleRef M,
 void LLVMOrcDisposeThreadSafeModule(LLVMOrcThreadSafeModuleRef TSM);
 
 /**
+ * Create a IRTransformLayer
+ */
+
+/**
  * Create a JITTargetMachineBuilder by detecting the host.
  *
  * On success the client owns the resulting JITTargetMachineBuilder. It must be

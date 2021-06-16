@@ -93,6 +93,7 @@ DEFINE_SIMPLE_CONVERSION_FUNCTIONS(ThreadSafeModule, LLVMOrcThreadSafeModuleRef)
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(JITTargetMachineBuilder,
                                    LLVMOrcJITTargetMachineBuilderRef)
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(ObjectLayer, LLVMOrcObjectLayerRef)
+DEFINE_SIMPLE_CONVERSION_FUNCTIONS(IRTransformLayer, LLVMOrcIRTransformLayerRef)
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(LLJITBuilder, LLVMOrcLLJITBuilderRef)
 DEFINE_SIMPLE_CONVERSION_FUNCTIONS(LLJIT, LLVMOrcLLJITRef)
 
@@ -647,4 +648,22 @@ void LLVMOrcRTDyldObjectLinkingLayerRegisterJITEventListener(
   assert(Listener && "Listener must not be null");
   reinterpret_cast<RTDyldObjectLinkingLayer *>(unwrap(RTDyldObjLinkingLayer))
       ->registerJITEventListener(*unwrap(Listener));
+}
+
+LLVMOrcIRTransformLayerRef LLVMOrcLLJITGetIRTransformLayer(LLVMOrcLLJITRef J) {
+  return wrap(&unwrap(J)->getIRTransformLayer());
+}
+
+void LLVMOrcLLJITIRTransformLayerSetTransform(
+    LLVMOrcIRTransformLayerRef TransformLayer,
+    LLVMOrcIRTransformLayerTransformFunction F, void *Ctx) {
+  return &unwrap(TransfromLayer)->setTransform(
+      [=](ThreadSafeModule TSM,
+          const MaterializationResponsibility &R) -> Expected<ThreadSafeModule> {
+        TSM.withModuleDo(
+          [=](Module &M) {
+            F(Ctx, wrap(&M), wrap(&R));
+          });
+        return std::move(TSM); // Not a redundant move: fix build on gcc-7.5
+      });
 }
