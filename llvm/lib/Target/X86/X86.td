@@ -1415,7 +1415,8 @@ def ProcessorFeatures {
                                          TuningFastImm16,
                                          TuningSBBDepBreaking,
                                          TuningSlowDivide64,
-                                         TuningSlowSHLD];
+                                         TuningSlowSHLD,
+                                         TuningAvoidMFENCE];
   list<SubtargetFeature> BtVer2Features =
     !listconcat(BtVer1Features, BtVer2AdditionalFeatures);
 
