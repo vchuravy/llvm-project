@@ -41,6 +41,9 @@ add_llvm_component_library(LLVMJITLink
   XCOFF_ppc64.cpp
   XCOFFLinkGraphBuilder.cpp
 
+  # WASM
+  WASM.cpp
+
   # Architectures:
   aarch32.cpp
   aarch64.cpp
