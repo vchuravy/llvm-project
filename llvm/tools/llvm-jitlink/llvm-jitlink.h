@@ -154,6 +154,9 @@ Error registerMachOGraphInfo(Session &S, jitlink::LinkGraph &G);
 /// Record symbols, GOT entries, stubs, and sections for COFF file.
 Error registerCOFFGraphInfo(Session &S, jitlink::LinkGraph &G);
 
+/// Record symbols and sections for WASM file.
+Error registerWasmGraphInfo(Session &S, jitlink::LinkGraph &G);
+
 /// Adds a statistics gathering plugin if any stats options are used.
 void enableStatistics(Session &S, bool UsingOrcRuntime);
 

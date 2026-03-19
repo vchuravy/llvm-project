@@ -1385,6 +1385,9 @@ void Session::modifyPassConfig(LinkGraph &G, PassConfiguration &PassConfig) {
       if (ES.getTargetTriple().getObjectFormat() == Triple::COFF)
         return registerCOFFGraphInfo(*this, G);
 
+      if (ES.getTargetTriple().getObjectFormat() == Triple::Wasm)
+        return registerWasmGraphInfo(*this, G);
+
       return make_error<StringError>("Unsupported object format for GOT/stub "
                                      "registration",
                                      inconvertibleErrorCode());
