@@ -121,6 +121,14 @@ loadLinkableFile(StringRef Path, const Triple &TT, LoadArchives LA,
                             LinkableFileKind::RelocatableObject);
     }
     break;
+  case file_magic::wasm_object:
+    if (LA == LoadArchives::Required)
+      return make_error<StringError>(Path + " does not contain an archive",
+                                     inconvertibleErrorCode());
+
+    if (!RequireFormat || *RequireFormat == Triple::Wasm)
+      return std::make_pair(std::move(*Buf), LinkableFileKind::RelocatableObject);
+    break;
   default:
     break;
   }

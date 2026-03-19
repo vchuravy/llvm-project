@@ -1,5 +1,5 @@
-# RUN: llvm-mc -filetype=obj -position-independent -triple=wasm32-unknown-unknown -o %t.o %s
-# RUN: llvm-jitlink -entry=entry -noexec -check %s %t.o
+# RUN: llvm-mc -filetype=obj -triple=wasm32-unknown-emscripten -o %t.o %s
+# RUN: llvm-jitlink -triple=wasm32-unknown-emscripten -entry=entry -noexec -check %s %t.o
 
 .globl  entry
 entry:
