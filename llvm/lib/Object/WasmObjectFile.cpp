@@ -1814,6 +1814,10 @@ Expected<uint32_t> WasmObjectFile::getSymbolFlags(DataRefImpl Symb) const {
     Result |= SymbolRef::SF_Undefined;
   if (Sym.isTypeFunction())
     Result |= SymbolRef::SF_Executable;
+  // A globally-bound, non-hidden, defined symbol is accessible to other
+  // modules, so mark it as exported.
+  if (!Sym.isBindingLocal() && !Sym.isHidden() && Sym.isDefined())
+    Result |= SymbolRef::SF_Exported;
   return Result;
 }
 
