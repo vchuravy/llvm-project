@@ -116,6 +116,20 @@ void addLLVMDialectToLLVMPass(mlir::PassManager &pm, llvm::raw_ostream &output);
 /// Use inliner extension point callback to register the default inliner pass.
 void registerDefaultInlinerPass(MLIRToLLVMPassPipelineConfig &config);
 
+/// Register a callback that augments the MLIRToLLVMPassPipelineConfig before the
+/// pass pipeline is built. This is the hook a -load'ed plugin (e.g. Enzyme) uses
+/// from a static initializer to plug passes into the pipeline extension points
+/// (see MLIRToLLVMPassPipelineConfig::registerHLFIROptEarlyEPCallbacks, ...).
+/// Callbacks run, in registration order, at the start of the codegen
+/// optimization pipeline. Thread-compatible: register from static initializers,
+/// which run before any compilation begins.
+void registerPassPipelineConfigCallback(
+    std::function<void(MLIRToLLVMPassPipelineConfig &)> callback);
+
+/// Invoke every callback registered via registerPassPipelineConfigCallback on
+/// \p config. Called by the frontend once the config has been built.
+void invokePassPipelineConfigCallbacks(MLIRToLLVMPassPipelineConfig &config);
+
 /// Register the passes used in Flang's MLIR pass pipeline
 /// e.g. --mlir-print-ir-before=<pass> and similar.
 void registerFlangPipelinePasses();

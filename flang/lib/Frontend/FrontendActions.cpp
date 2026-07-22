@@ -633,6 +633,10 @@ void CodeGenAction::lowerHLFIRToFIR() {
       ci.getInvocation().getLoweringOpts().getFPMaxminBehavior();
   if (ci.getInvocation().getLangOpts().OpenMPIsTargetDevice)
     config.EnableOpenMPIsTargetDevice = true;
+  // Let -load'ed plugins (e.g. Enzyme) augment the pipeline config, for example
+  // to register passes at the HLFIR extension points while hlfir.* intrinsics
+  // are still present. No-op unless a plugin registered a callback.
+  fir::invokePassPipelineConfigCallbacks(config);
   // Create the pass pipeline
   fir::createHLFIRToFIRPassPipeline(pm, enableOpenMP, config);
   (void)mlir::applyPassManagerCLOptions(pm);
