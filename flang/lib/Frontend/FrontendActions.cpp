@@ -755,6 +755,12 @@ void CodeGenAction::generateLLVMIR() {
   config.SkipConvertComplexPow = pipelineTriple.isAMDGCN();
   fir::registerDefaultInlinerPass(config);
 
+  // Let -load'ed plugins (e.g. Enzyme) augment the pipeline config. On this path
+  // createMLIRToLLVMPassPipeline runs createHLFIRToFIRPassPipeline, so callbacks
+  // registering HLFIR extension-point passes take effect for -emit-llvm/-emit-obj
+  // just as they do for -emit-fir. No-op unless a plugin registered a callback.
+  fir::invokePassPipelineConfigCallbacks(config);
+
   if (auto vsr = getVScaleRange(ci)) {
     config.VScaleMin = vsr->first;
     config.VScaleMax = vsr->second;
