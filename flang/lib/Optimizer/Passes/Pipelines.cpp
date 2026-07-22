@@ -281,6 +281,13 @@ void createHLFIRToFIRPassPipeline(mlir::PassManager &pm,
                                   EnableOpenMP enableOpenMP,
                                   const MLIRToLLVMPassPipelineConfig &config) {
   llvm::OptimizationLevel optLevel = config.OptLevel;
+
+  // Early HLFIR Optimizer EP Callback. Runs while HLFIR intrinsic operations
+  // (hlfir.sum, hlfir.matmul, ...) are still present and before any HLFIR
+  // simplification/inlining, e.g. to plug in transformations such as automatic
+  // differentiation that need to see the high-level intrinsic operations.
+  config.invokeHLFIROptEarlyEPCallbacks(pm, optLevel);
+
   if (optLevel != llvm::OptimizationLevel::O0) {
     addNestedPassToAllTopLevelOperations<PassConstructor>(
         pm, hlfir::createExpressionSimplification);
@@ -328,6 +335,11 @@ void createHLFIRToFIRPassPipeline(mlir::PassManager &pm,
   }
   pm.addPass(hlfir::createLowerHLFIROrderedAssignments(
       {/*tryFusingAssignments=*/optLevel != llvm::OptimizationLevel::O0}));
+
+  // Last HLFIR Optimizer EP Callback. Final opportunity to process HLFIR
+  // intrinsic operations before they are lowered to FIR/runtime calls.
+  config.invokeHLFIROptLastEPCallbacks(pm, optLevel);
+
   pm.addPass(hlfir::createLowerHLFIRIntrinsics());
 
   hlfir::BufferizeHLFIROptions bufferizeOptions;
