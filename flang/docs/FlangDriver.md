@@ -560,6 +560,57 @@ config.registerHLFIROptEarlyEPCallbacks(
     });
 ```
 
+### Registering Extension Point Passes from a Plugin
+
+To add passes at these extension points from a
+[plugin](#frontend-driver-plugins), register a *pipeline config callback* with
+`fir::registerPassPipelineConfigCallback`
+(`flang/include/flang/Optimizer/Passes/Pipelines.h`). The frontend driver runs
+every registered callback on its `MLIRToLLVMPassPipelineConfig` once the config
+is fully set up, just before it builds the pipeline. Register from a static initializer, so the callback is in place as
+soon as the plugin is loaded and before any compilation begins:
+
+```c++
+struct MyPluginRegistration {
+  MyPluginRegistration() {
+    fir::registerPassPipelineConfigCallback(
+        [](MLIRToLLVMPassPipelineConfig &config) {
+          config.registerHLFIROptEarlyEPCallbacks(
+              [](mlir::PassManager &pm, llvm::OptimizationLevel) {
+                pm.addPass(createMyHLFIRPass());
+              });
+        });
+  }
+};
+static MyPluginRegistration myPluginRegistration;
+```
+
+These callbacks run on both the `-emit-fir` path
+(`CodeGenAction::lowerHLFIRToFIR`) and the `-emit-llvm`/`-emit-obj` path
+(`CodeGenAction::generateLLVMIR`). `-emit-fir` only builds the HLFIR-to-FIR
+pipeline, so passes registered at the HLFIR extension points run on both paths,
+while those registered at the FIR optimizer extension points run only when
+generating LLVM IR. The registry is append-only and runs callbacks in
+registration order; a callback must not register further callbacks. Only the
+frontend driver runs the registry: `bbc`, `tco` and `fir-opt` do not.
+
+There is an example plugin in `flang/examples/HLFIRPipelinePlugin`, tested by
+`flang/test/Examples/hlfir-pipeline-plugin.f90`.
+
+### Loading MLIR Pass Plugins into `fir-opt`
+
+`fir-opt` is built on `MlirOptMain` and therefore accepts MLIR's
+`--load-pass-plugin` and `--load-dialect-plugin` options. As with `mlir-opt`,
+the plugin resolves the MLIR, FIR and HLFIR symbols it uses against the host
+tool, which therefore has to export them
+(`export_executable_symbols_for_plugins` in
+`flang/tools/fir-opt/CMakeLists.txt`):
+
+```bash
+fir-opt --load-pass-plugin=./MyPasses.so \
+        --pass-pipeline='builtin.module(my-hlfir-pass)' input.fir
+```
+
 ## LLVM Pass Plugins
 
 Pass plugins are dynamic shared objects that consist of one or more LLVM IR
