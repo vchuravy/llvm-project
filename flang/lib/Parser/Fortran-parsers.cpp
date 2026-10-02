@@ -1427,21 +1427,33 @@ struct PluginDirectivePrefix {
     return std::nullopt;
   }
 };
+using PluginDirectiveValue =
+    std::variant<Name, CompilerDirective::Plugin::CommonBlock, std::uint64_t,
+        SignedRealLiteralConstant, std::string>;
+// A real literal before an integer, which would match its leading digits.
 constexpr auto pluginDirectiveValue{
-    construct<std::variant<Name, CompilerDirective::Plugin::CommonBlock,
-        std::uint64_t, std::string>>(
+    construct<PluginDirectiveValue>(
         construct<CompilerDirective::Plugin::CommonBlock>("/" >> name / "/")) ||
-    construct<std::variant<Name, CompilerDirective::Plugin::CommonBlock,
-        std::uint64_t, std::string>>(name) ||
-    construct<std::variant<Name, CompilerDirective::Plugin::CommonBlock,
-        std::uint64_t, std::string>>(digitString64) ||
-    construct<std::variant<Name, CompilerDirective::Plugin::CommonBlock,
-        std::uint64_t, std::string>>(space >> charLiteralConstantWithoutKind)};
+    construct<PluginDirectiveValue>(name) ||
+    construct<PluginDirectiveValue>(signedRealLiteralConstant) ||
+    construct<PluginDirectiveValue>(digitString64) ||
+    construct<PluginDirectiveValue>(space >> charLiteralConstantWithoutKind)};
 constexpr auto pluginDirectiveArg{construct<CompilerDirective::Plugin::Arg>(
     maybe(name / "="_tok), pluginDirectiveValue)};
+// name(value) after the parenthesized arguments, the same as name=value.
+constexpr auto pluginDirectiveClause{construct<CompilerDirective::Plugin::Arg>(
+    construct<std::optional<Name>>(name), parenthesized(pluginDirectiveValue))};
+static std::list<CompilerDirective::Plugin::Arg> AppendPluginDirectiveClauses(
+    std::list<CompilerDirective::Plugin::Arg> &&args,
+    std::list<CompilerDirective::Plugin::Arg> &&clauses) {
+  args.splice(args.end(), clauses);
+  return std::move(args);
+}
 constexpr auto pluginDirective{
     construct<CompilerDirective::Plugin>(PluginDirectivePrefix{}, name,
-        defaulted(parenthesized(optionalList(pluginDirectiveArg))))};
+        applyFunction(AppendPluginDirectiveClauses,
+            defaulted(parenthesized(optionalList(pluginDirectiveArg))),
+            many(pluginDirectiveClause)))};
 TYPE_PARSER(beginDirective >> some(letter) >> "$ "_tok >>
     sourced((construct<CompilerDirective>(pluginDirective) ||
                 construct<CompilerDirective>(ignore_tkr) ||

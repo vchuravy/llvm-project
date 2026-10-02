@@ -429,6 +429,24 @@ static void PutPluginDirectives(
                 os << '/' << c.v.ToString() << '/';
               },
               [&](std::uint64_t n) { os << n; },
+              [&](const parser::SignedRealLiteralConstant &r) {
+                const auto &[sign, real]{r.t};
+                const auto &[value, kind]{real.t};
+                if (sign) {
+                  os << (*sign == parser::Sign::Negative ? '-' : '+');
+                }
+                os << value.source.ToString();
+                if (kind) {
+                  common::visit(common::visitors{
+                                    [&](std::uint64_t k) { os << '_' << k; },
+                                    [&](const auto &named) {
+                                      os << '_'
+                                         << named.thing.thing.thing.ToString();
+                                    },
+                                },
+                      kind->u);
+                }
+              },
               [&](const std::string &str) {
                 os << parser::QuoteCharacterLiteral(str);
               },
