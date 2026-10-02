@@ -18,6 +18,12 @@
 // directive to its subject (a procedure or a variable) as an MLIR attribute,
 // for the plugin's own passes to interpret.
 //
+// A plugin may also register a comment sentinel for its prefix, so that
+//
+//   !$prefix keyword [ ( arg [, arg]... ) ]
+//
+// is the same directive, and other compilers see a comment.
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef FORTRAN_SUPPORT_PLUGINDIRECTIVES_H_
@@ -72,6 +78,20 @@ bool isPluginDirectivePrefix(std::string_view prefix);
 /// The registered directive, or null.
 const PluginDirectiveSpec *lookupPluginDirective(
     std::string_view prefix, std::string_view keyword);
+
+/// Make `!$prefix` a directive sentinel for the directives with this (lower
+/// case) prefix: in free form, and in fixed form with `!`, `c` or `*` in
+/// column 1. The prescanner spells such a line `!dir$ prefix ...`, so it is
+/// parsed, resolved, written to module files and lowered as that spelling.
+/// A fixed form sentinel longer than four characters ends where `$prefix`
+/// does, and the column after it takes the place of column 6: blank on an
+/// initial line, and the continuation mark on a continuation line.
+/// `!$` followed by a blank remains OpenMP conditional compilation.
+/// Call from a static initializer in a plugin, like registerPluginDirective.
+void registerPluginDirectiveSentinel(std::string_view prefix);
+
+/// The sentinels registered by registerPluginDirectiveSentinel, as "$prefix".
+const std::vector<std::string> &getPluginDirectiveSentinels();
 
 } // namespace Fortran::common
 

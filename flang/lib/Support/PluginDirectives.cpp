@@ -40,4 +40,24 @@ const PluginDirectiveSpec *lookupPluginDirective(
   return nullptr;
 }
 
+static std::vector<std::string> &getSentinels() {
+  static std::vector<std::string> sentinels;
+  return sentinels;
+}
+
+void registerPluginDirectiveSentinel(std::string_view prefix) {
+  std::string sentinel{"$"};
+  sentinel += prefix;
+  for (const std::string &s : getSentinels()) {
+    if (s == sentinel) {
+      return;
+    }
+  }
+  getSentinels().push_back(std::move(sentinel));
+}
+
+const std::vector<std::string> &getPluginDirectiveSentinels() {
+  return getSentinels();
+}
+
 } // namespace Fortran::common
