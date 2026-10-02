@@ -11566,6 +11566,38 @@ void ResolveNamesVisitor::ResolvePluginDirective(
               : common::PluginDirectiveArgKind::Variable)) {
     return;
   }
+  // A generic interface stands for all of its specific procedures, also
+  // private ones and those of other modules, which a directive elsewhere
+  // could not name. Not for a directive with procedure arguments, which
+  // each specific procedure would need its own of.
+  std::vector<const Symbol *> subjects{subject};
+  if (const auto *generic{subject->GetUltimate().detailsIf<GenericDetails>()}) {
+    bool takesProcedures{false};
+    for (const common::PluginDirectiveArg &a : spec->args) {
+      takesProcedures |= a.kind == common::PluginDirectiveArgKind::Procedure;
+    }
+    if (takesProcedures) {
+      Say(subjectName.source,
+          "'%s' is a generic interface; a '%s %s' directive must name one of its specific procedures"_err_en_US,
+          subjectName.ToString(), prefix.ToString(), keyword.ToString());
+      return;
+    }
+    subjects.clear();
+    for (const Symbol &specific : generic->specificProcs()) {
+      subjects.push_back(&specific);
+    }
+    if (const Symbol *specific{generic->specific()}; specific &&
+        std::find(subjects.begin(), subjects.end(), specific) ==
+            subjects.end()) {
+      subjects.push_back(specific);
+    }
+    if (subjects.empty()) {
+      Say(subjectName.source,
+          "Generic interface '%s' has no specific procedures"_err_en_US,
+          subjectName.ToString());
+      return;
+    }
+  }
 
   // The other arguments are keyword arguments.
   std::set<std::string> seen;
@@ -11606,6 +11638,14 @@ void ResolveNamesVisitor::ResolvePluginDirective(
       if (const auto *name{std::get_if<parser::Name>(&value)}) {
         const Symbol *symbol{resolve(*name)};
         ok &= symbol && checkKind(*name, *symbol, argSpec->kind);
+        if (symbol &&
+            argSpec->kind == common::PluginDirectiveArgKind::Procedure &&
+            symbol->GetUltimate().has<GenericDetails>()) {
+          Say(name->source,
+              "'%s' is a generic interface; argument '%s' of a '%s %s' directive must name a specific procedure"_err_en_US,
+              name->ToString(), argName, prefix.ToString(), keyword.ToString());
+          ok = false;
+        }
       } else if (const auto *common{std::get_if<
                      parser::CompilerDirective::Plugin::CommonBlock>(&value)};
           common && argSpec->kind == common::PluginDirectiveArgKind::Variable) {
@@ -11641,8 +11681,10 @@ void ResolveNamesVisitor::ResolvePluginDirective(
     }
   }
   if (ok) {
-    context().AddPluginDirective(*subject, x,
-        currScope().symbol() && currScope().symbol()->IsFromModFile());
+    for (const Symbol *s : subjects) {
+      context().AddPluginDirective(*s, x,
+          currScope().symbol() && currScope().symbol()->IsFromModFile());
+    }
   }
 }
 
