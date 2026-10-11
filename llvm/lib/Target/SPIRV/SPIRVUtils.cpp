@@ -26,10 +26,29 @@
 #include "llvm/Demangle/Demangle.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/IntrinsicsSPIRV.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/TargetParser/AtomicScope.h"
 #include <queue>
 #include <vector>
+
+using namespace llvm;
+
+namespace {
+enum class SPIRVFPContractMode { On, Off, Fast };
+} // namespace
+
+static cl::opt<SPIRVFPContractMode> SPIRVFPContract(
+    "spirv-fp-contract",
+    cl::desc("Override FP contraction policy for SPIR-V kernel entry points"),
+    cl::values(
+        clEnumValN(SPIRVFPContractMode::On, "on",
+                   "Follow IR metadata (default)"),
+        clEnumValN(SPIRVFPContractMode::Off, "off",
+                   "Force ContractionOff on all kernel entry points"),
+        clEnumValN(SPIRVFPContractMode::Fast, "fast",
+                   "Suppress ContractionOff on all kernel entry points")),
+    cl::init(SPIRVFPContractMode::On));
 
 namespace llvm {
 namespace SPIRV {
@@ -635,6 +654,15 @@ bool isEntryPoint(const Function &F) {
     return true;
 
   return false;
+}
+
+bool hasDefaultContractionOff(const Module &M, const SPIRVSubtarget &ST) {
+  // --spirv-fp-contract=off forces ContractionOff for kernel entry points,
+  // --spirv-fp-contract=fast suppresses it.
+  return ST.isKernel() && !M.getNamedMetadata("spirv.ExecutionMode") &&
+         SPIRVFPContract != SPIRVFPContractMode::Fast &&
+         (SPIRVFPContract == SPIRVFPContractMode::Off ||
+          !M.getNamedMetadata("opencl.enable.FP_CONTRACT"));
 }
 
 Type *parseBasicTypeName(StringRef &TypeName, LLVMContext &Ctx) {

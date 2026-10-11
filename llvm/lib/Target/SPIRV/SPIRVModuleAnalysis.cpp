@@ -3147,6 +3147,25 @@ void SPIRVModuleAnalysisImpl::run(const Module &M) {
   // Collect OpName, OpEntryPoint, OpDecorate etc, process other instructions.
   processOtherInstrs(M);
 
+  // With SPV_KHR_float_controls2, the AsmPrinter emits FPFastMathDefault in
+  // place of the default ContractionOff of kernel entry points, for every 16-,
+  // 32- and 64-bit floating-point type in the module. That requires the
+  // extension even when no instruction is decorated with fast-math flags.
+  if (ST->canUseExtension(SPIRV::Extension::SPV_KHR_float_controls2) &&
+      !MAI.MS[SPIRV::MB_EntryPoints].empty() &&
+      hasDefaultContractionOff(M, *ST) &&
+      any_of(MAI.MS[SPIRV::MB_TypeConstVars], [](const MachineInstr *MI) {
+        if (MI->getOpcode() != SPIRV::OpTypeFloat)
+          return false;
+        unsigned Width = MI->getOperand(1).getImm();
+        return Width == 16 || Width == 32 || Width == 64;
+      })) {
+    MAI.Reqs.getAndAddRequirements(SPIRV::OperandCategory::ExecutionModeOperand,
+                                   SPIRV::ExecutionMode::FPFastMathDefault,
+                                   *ST);
+    MAI.Reqs.addExtension(SPIRV::Extension::SPV_KHR_float_controls2);
+  }
+
   // If there are no entry points, we need the Linkage capability.
   if (MAI.MS[SPIRV::MB_EntryPoints].empty())
     MAI.Reqs.addCapability(SPIRV::Capability::Linkage);

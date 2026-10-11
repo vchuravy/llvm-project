@@ -329,6 +329,12 @@ bool isSpecialOpaqueType(const Type *Ty);
 // Check if the function is an SPIR-V entry point
 bool isEntryPoint(const Function &F);
 
+// Check if the kernel entry points of the module get the ContractionOff
+// execution mode by default, or rather FPFastMathDefault without AllowContract
+// for every floating-point type when SPV_KHR_float_controls2 is used. This
+// follows the opencl.enable.FP_CONTRACT metadata and --spirv-fp-contract.
+bool hasDefaultContractionOff(const Module &M, const SPIRVSubtarget &ST);
+
 // Parse basic scalar type name, substring TypeName, and return LLVM type.
 Type *parseBasicTypeName(StringRef &TypeName, LLVMContext &Ctx);
 
