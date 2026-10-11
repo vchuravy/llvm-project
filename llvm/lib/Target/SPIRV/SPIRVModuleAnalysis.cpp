@@ -2920,15 +2920,32 @@ static void handleMIFlagDecoration(
     // operands must have the same type. For the extended instructions, the
     // floating point type can be in the result type or in the operands. It's
     // unclear if the operands and the result type must be the same. Let's
-    // assume they must be. Therefore, for 1. and 2., we can check the first
-    // operand type, and for 3. we can check the result type.
+    // assume they must be. Therefore, for 1. and 3., we can check the result
+    // type, and for 2. we check the type of the first operand. The same holds
+    // for OpFunctionCall, whose operand 2 is the callee.
     assert(I.getNumOperands() >= 3 && "Expected at least 3 operands");
-    Register ResReg = I.getOpcode() == SPIRV::OpExtInst
-                          ? I.getOperand(1).getReg()
-                          : I.getOperand(2).getReg();
-    SPIRVTypeInst ResType = GR->getSPIRVTypeForVReg(ResReg, I.getMF());
-    const Type *Ty = GR->getTypeForSPIRVType(ResType);
-    Ty = Ty->isVectorTy() ? cast<VectorType>(Ty)->getElementType() : Ty;
+    MachineFunction *MF = I.getMF();
+    const MachineRegisterInfo &MRI = MF->getRegInfo();
+    auto GetScalarType = [&](SPIRVTypeInst Type) -> SPIRVTypeInst {
+      if (Type && isVectorType(Type))
+        return MRI.getVRegDef(Type->getOperand(1).getReg());
+      return Type;
+    };
+    SPIRVTypeInst ScalarType =
+        GetScalarType(MRI.getVRegDef(I.getOperand(1).getReg()));
+    if (ScalarType && ScalarType->getOpcode() == SPIRV::OpTypeBool &&
+        I.getOperand(2).isReg()) {
+      // Passes like MachineCSE create virtual registers that have no type in
+      // the registry, so fall back to the result type of their definition.
+      Register OpReg = I.getOperand(2).getReg();
+      SPIRVTypeInst OpType = GR->getSPIRVTypeForVReg(OpReg, MF);
+      if (!OpType)
+        OpType = MRI.getVRegDef(MRI.getVRegDef(OpReg)->getOperand(1).getReg());
+      ScalarType = GetScalarType(OpType);
+    }
+    if (!ScalarType || ScalarType->getOpcode() != SPIRV::OpTypeFloat)
+      return;
+    const Type *Ty = GR->getTypeForSPIRVType(ScalarType);
 
     // Match instruction type with the FPFastMathDefaultInfoVec.
     bool Emit = false;
